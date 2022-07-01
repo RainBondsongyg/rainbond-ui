@@ -9,8 +9,7 @@ import {
   notification,
   Popconfirm,
   Radio,
-  Switch,
-  Tag
+  Switch
 } from 'antd';
 import { connect } from 'dva';
 import React, { Fragment } from 'react';
@@ -21,6 +20,7 @@ import SetMemberAppAction from '../../components/SetMemberAppAction';
 import appProbeUtil from '../../utils/appProbe-util';
 import appStatusUtil from '../../utils/appStatus-util';
 import globalUtil from '../../utils/global';
+import Kubernetes from './kubernets';
 import AddTag from './setting/add-tag';
 import EditHealthCheck from './setting/edit-health-check';
 import EditRunHealthCheck from './setting/edit-run-health-check';
@@ -711,7 +711,7 @@ export default class Index extends React.Component {
                 </Button>
               )}
             </FormItem>
-            <FormItem
+            {/* <FormItem
               style={{
                 marginBottom: 0
               }}
@@ -735,7 +735,7 @@ export default class Index extends React.Component {
                   添加特性
                 </Button>
               )}
-            </FormItem>
+            </FormItem> */}
             <FormItem
               style={{
                 marginBottom: 0
@@ -820,6 +820,7 @@ export default class Index extends React.Component {
             )}
           </Card>
         )}
+        <Kubernetes />
         {this.state.addTag && (
           <AddTag
             tags={tabData || []}

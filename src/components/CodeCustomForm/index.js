@@ -114,7 +114,7 @@ export default class Index extends PureComponent {
       if (err) {
         return;
       }
-      if (fieldsValue.version_type == 'tag') {
+      if (fieldsValue.version_type === 'tag') {
         // eslint-disable-next-line no-param-reassign
         fieldsValue.code_version = `tag:${fieldsValue.code_version}`;
       }
@@ -130,7 +130,7 @@ export default class Index extends PureComponent {
 
   fetchCheckboxGroup = (type, serverType) => {
     const { checkedList, showKey } = this.state;
-    const isSubdirectories = serverType !== 'svn';
+    const isSubdirectories = serverType === 'git';
     return (
       <Checkbox.Group
         style={{ width: '100%', marginBottom: '10px' }}
@@ -157,7 +157,23 @@ export default class Index extends PureComponent {
       </Checkbox.Group>
     );
   };
-
+  handleValiateNameSpace = (_, value, callback) => {
+    if (!value) {
+      return callback(new Error('请输入组件英文名称'));
+    }
+    if (value && value.length <= 32) {
+      const Reg = /^[a-z]([-a-z0-9]*[a-z0-9])?$/;
+      if (!Reg.test(value)) {
+        return callback(
+          new Error('只支持小写字母、数字或“-”，并且必须以字母开始、以数字或字母结尾')
+        );
+      }
+      callback();
+    }
+    if (value.length > 32) {
+      return callback(new Error('不能大于32个字符'));
+    }
+  };
   render() {
     const {
       groups,
@@ -186,9 +202,12 @@ export default class Index extends PureComponent {
     let isHttp = /(http|https):\/\/([\w.]+\/?)\S*/.test(gitUrl || '');
     // eslint-disable-next-line no-unused-vars
     let urlCheck = /^(git@|ssh:\/\/|svn:\/\/|http:\/\/|https:\/\/).+$/gi;
-    if (serverType == 'svn') {
+    if (serverType === 'svn') {
       isHttp = true;
       urlCheck = /^(ssh:\/\/|svn:\/\/|http:\/\/|https:\/\/).+$/gi;
+    }
+    if (serverType === 'oss') {
+      isHttp = true;
     }
     const isSSH = !isHttp;
     const showCreateGroups =
@@ -203,6 +222,7 @@ export default class Index extends PureComponent {
       >
         <Option value="git">Git</Option>
         <Option value="svn">Svn</Option>
+        <Option value="oss">OSS</Option>
       </Select>
     );
     const versionSelector = getFieldDecorator('version_type', {
@@ -259,6 +279,17 @@ export default class Index extends PureComponent {
               ]
             })(<Input placeholder="请为创建的组件起个名字吧" />)}
           </Form.Item>
+          {/* 集群内组件名称 */}
+          <Form.Item {...formItemLayout} label="组件英文名称">
+            {getFieldDecorator('k8s_component_name', {
+              rules: [
+                {
+                  required: true,
+                  validator: this.handleValiateNameSpace
+                }
+              ]
+            })(<Input placeholder="组件的英文名称" />)}
+          </Form.Item>
           <Form.Item {...formItemLayout} label="仓库地址">
             {getFieldDecorator('git_url', {
               initialValue: data.git_url || '',
@@ -302,7 +333,7 @@ export default class Index extends PureComponent {
             </Form.Item>
           )}
 
-          {subdirectories && serverType !== 'svn' && (
+          {subdirectories && serverType === 'git' && (
             <Form.Item {...formItemLayout} label="子目录路径">
               {getFieldDecorator('subdirectories', {
                 initialValue: '',
@@ -310,17 +341,19 @@ export default class Index extends PureComponent {
               })(<Input placeholder="请输入子目录路径" />)}
             </Form.Item>
           )}
-          <Form.Item {...formItemLayout} label="代码版本">
-            {getFieldDecorator('code_version', {
-              initialValue: data.code_version || this.getDefaultBranchName(),
-              rules: [{ required: true, message: '请输入代码版本' }]
-            })(
-              <Input
-                addonBefore={versionSelector}
-                placeholder="请输入代码版本"
-              />
-            )}
-          </Form.Item>
+          {serverType !== 'oss' && (
+            <Form.Item {...formItemLayout} label="代码版本">
+              {getFieldDecorator('code_version', {
+                initialValue: data.code_version || this.getDefaultBranchName(),
+                rules: [{ required: true, message: '请输入代码版本' }]
+              })(
+                <Input
+                  addonBefore={versionSelector}
+                  placeholder="请输入代码版本"
+                />
+              )}
+            </Form.Item>
+          )}
 
           {showSubmitBtn ? (
             <Form.Item

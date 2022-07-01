@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unused-state */
 /* eslint-disable react/sort-comp */
 import {
   Button,
@@ -44,13 +45,26 @@ export default class KubernetesClusterShow extends PureComponent {
       showCreateLog: false,
       isInstallRemind: false,
       installLoading: false,
-      isComponents: false
+      isComponents: false,
+      initCmd: null
     };
   }
   componentDidMount() {
     this.autoPage();
+    this.handleLoadInitNodeCmd();
   }
 
+  handleLoadInitNodeCmd = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'cloud/getInitNodeCmd',
+      callback: res => {
+        this.setState({
+          initCmd: (res && res.response_data && res.response_data.cmd) || ''
+        });
+      }
+    });
+  };
   autoPage = () => {
     const { updateKubernetes, updateKubernetesClusterID } = this.props;
     if (updateKubernetes && updateKubernetesClusterID) {
@@ -222,7 +236,7 @@ export default class KubernetesClusterShow extends PureComponent {
   };
   render() {
     const { selectProvider, linkedClusters, eid, selectCluster } = this.props;
-    const { selectClusterName } = this.state;
+    const { selectClusterName, initCmd } = this.state;
     const columns = [
       {
         width: 50,
@@ -352,19 +366,25 @@ export default class KubernetesClusterShow extends PureComponent {
                   对接
                 </Link>
               )}
-            {selectProvider !== 'custom' && (
+            {selectProvider !== 'rke' &&
+              row.create_log_path &&
+              row.create_log_path.startsWith('http') && (
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() => {
+                    window.open(row.create_log_path, '_blank');
+                  }}
+                >
+                  查看日志
+                </Button>
+              )}
+            {selectProvider === 'rke' && (
               <Button
                 type="link"
                 style={{ padding: 0 }}
                 onClick={() => {
-                  if (
-                    row.create_log_path &&
-                    row.create_log_path.startsWith('http')
-                  ) {
-                    window.open(row.create_log_path, '_blank');
-                  } else {
-                    this.queryCreateLog(row);
-                  }
+                  this.queryCreateLog(row);
                 }}
               >
                 查看日志
@@ -438,6 +458,7 @@ export default class KubernetesClusterShow extends PureComponent {
     } = this.state;
     const delK8sConfigurationFile = `docker rm -vf $(docker ps -a | grep 'rke-tools\\|hyperkube\\|coreos-etcd\\|k8s' | awk '{print $1}')`;
     const removek8sAssociatedContainer = `rm -rf /var/lib/etcd /etc/kubernetes /etc/cni /opt/cni /var/lib/cni /var/run/calico /opt/rke`;
+
     return (
       <div>
         <Row style={{ marginBottom: '20px' }}>
@@ -545,6 +566,7 @@ export default class KubernetesClusterShow extends PureComponent {
               </span>
               {this.handleCommandBox(delK8sConfigurationFile)}
               {this.handleCommandBox(removek8sAssociatedContainer)}
+              {this.handleCommandBox(initCmd)}
             </Row>
           </Modal>
         )}

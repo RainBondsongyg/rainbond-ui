@@ -19,7 +19,8 @@ export async function createAppByCode(body = {}) {
         code_version: body.code_version,
         username: body.username,
         password: body.password,
-        server_type: body.server_type
+        server_type: body.server_type,
+        k8s_component_name: body.k8s_component_name
       }
     }
   );
@@ -76,7 +77,8 @@ export async function createAppByCompose(body = {}) {
         image_type: 'docker_image',
         yaml_content: body.yaml_content,
         user_name: body.user_name,
-        password: body.password
+        password: body.password,
+        k8s_app: body.k8s_app
       }
     }
   );
@@ -96,7 +98,8 @@ export async function createAppByDockerrun(body = {}) {
         service_cname: body.service_cname,
         image_type: body.image_type,
         user_name: body.user_name,
-        password: body.password
+        password: body.password,
+        k8s_component_name: body.k8s_component_name
       }
     }
   );
@@ -251,6 +254,52 @@ export async function installApp(body = {}) {
       },
       params: {
         region_name: body.region_name
+      }
+    }
+  );
+}
+/*
+  从云市安装应用下的插件
+*/
+export async function installAppPlugin(body = {}) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/apps/plugins`,
+    {
+      method: 'post',
+      data: {
+        app_id: body.app_id,
+        group_key: body.group_key,
+        app_version: body.app_version,
+        is_deploy: body.is_deploy,
+        install_from_cloud: body.install_from_cloud
+          ? body.install_from_cloud
+          : false,
+        market_name: body.marketName
+      },
+      params: {
+        region_name: body.region_name
+      }
+    }
+  );
+}
+/*
+  切换应用版本信息
+*/
+export async function changeAppVersions(body = {}) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/apps/plugins`,
+    {
+      method: 'get',
+      params: {
+        region_name: body.region_name,
+        app_id: body.app_id,
+        group_key: body.group_key,
+        app_version: body.app_version,
+        is_deploy: body.is_deploy,
+        install_from_cloud: body.install_from_cloud
+          ? body.install_from_cloud
+          : false,
+        market_name: body.marketName
       }
     }
   );

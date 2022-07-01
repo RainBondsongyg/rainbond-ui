@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-expressions */
+/* eslint-disable consistent-return */
+/* eslint-disable react/no-unused-state */
 /* eslint-disable react/jsx-indent */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-return-assign */
@@ -196,7 +199,11 @@ export default class RKEClusterConfig extends PureComponent {
       initNodeCmd: '',
       activeKey: '1',
       helpError: '',
-      helpType: ''
+      helpType: '',
+      forbiddenConfig: true,
+      countConfig: true,
+      countNum: 15,
+      countContent: null
     };
     this.clusters = [];
   }
@@ -235,7 +242,7 @@ export default class RKEClusterConfig extends PureComponent {
     }
 
     this.setState({
-      dataSource: nodeList,
+      dataSource: nodeList || [],
       count: (nodeList && nodeList.length) || 0
     });
   };
@@ -538,9 +545,21 @@ export default class RKEClusterConfig extends PureComponent {
     }
   };
   handleCheck = isCheck => {
-    this.setState({
-      isCheck
-    });
+    this.setState(
+      {
+        isCheck,
+        forbiddenConfig: true,
+        countNum: 15,
+        countConfig: true,
+        countContent: null
+      },
+
+      () => {
+        const { guideStep } = this.props;
+        isCheck && guideStep !== 7 && this.handleCountDown();
+        !isCheck && clearInterval(this.timerId);
+      }
+    );
   };
   handleActiveKey = activeKey => {
     this.setState({
@@ -566,6 +585,25 @@ export default class RKEClusterConfig extends PureComponent {
       this.handleActiveKey(`${key}`);
     }
   };
+  // 倒计时处理
+  handleCountDown = () => {
+    let { countNum } = this.state;
+    this.setState({
+      countConfig: false,
+      countContent: `${countNum}s`
+    });
+    this.timerId = setInterval(() => {
+      this.setState({ countNum: countNum--, countContent: `${countNum}s` });
+      if (countNum < 0) {
+        clearInterval(this.timerId);
+        this.setState(() => ({
+          forbiddenConfig: false,
+          countConfig: true
+        }));
+        return null;
+      }
+    }, 1000);
+  };
   render() {
     const {
       onCancel,
@@ -583,7 +621,10 @@ export default class RKEClusterConfig extends PureComponent {
       initNodeCmd,
       isCheck,
       activeKey,
-      yamlVal
+      yamlVal,
+      forbiddenConfig,
+      countContent,
+      countConfig
     } = this.state;
     const formItemLayout = {
       labelCol: {
@@ -635,7 +676,7 @@ export default class RKEClusterConfig extends PureComponent {
         width: 80,
         align: 'center',
         render: (_, record) => {
-          return dataSource.length > 1 ? (
+          return dataSource && dataSource.length > 1 ? (
             <Popconfirm
               title="确定要删除吗?"
               onConfirm={() => this.handleDelete(record.key)}
@@ -675,12 +716,11 @@ export default class RKEClusterConfig extends PureComponent {
       zIndex: 1000,
       background: '#fff'
     };
+
     return (
       <Modal
         visible
-        title={
-          clusterID ? '配置 Kubernetes 集群' : '基于主机安装 Kubernetes 集群'
-        }
+        title={clusterID ? '配置集群' : '基于主机安装集群'}
         className={styles.TelescopicModal}
         width={900}
         destroyOnClose
@@ -727,19 +767,35 @@ export default class RKEClusterConfig extends PureComponent {
             className={styles.TelescopicModal}
             width={900}
             visible
-            onOk={() => {
-              this.setState(
-                {
-                  loading: true
-                },
-                () => {
-                  this.handleTabs(activeKey === '1' ? '2' : '1', true);
-                }
-              );
-            }}
-            onCancel={() => {
-              this.handleCheck(false);
-            }}
+            footer={[
+              <Button
+                key="back"
+                onClick={() => {
+                  this.handleCheck(false);
+                }}
+              >
+                取消
+              </Button>,
+              <Button
+                key="link"
+                type="primary"
+                onClick={() => {
+                  this.setState(
+                    {
+                      loading: true
+                    },
+                    () => {
+                      this.handleTabs(activeKey === '1' ? '2' : '1', true);
+                    }
+                  );
+                }}
+                disabled={forbiddenConfig}
+              >
+                {(!countConfig &&
+                  `我已在所有节点执行上述命令,开始安装(${countContent})`) ||
+                  ' 我已在所有节点执行上述命令,开始安装'}
+              </Button>
+            ]}
           >
             <Row style={{ padding: '0 16px' }}>
               <span style={{ fontWeight: 600, color: 'red' }}>
@@ -765,10 +821,13 @@ export default class RKEClusterConfig extends PureComponent {
                       configName: 'nodeInitialization',
                       handleClick: () => {
                         copy(initNodeCmd);
-                        notification.success({ message: '复制成功' });
+                        this.handleCountDown();
+                      },
+                      handleClosed: () => {
+                        this.handleCountDown();
                       },
                       desc:
-                        '请复制上诉命令完成所有节点的初始化,点击确定、请等待 RKE 集群安装完成。',
+                        '请复制上述命令完成所有节点的初始化,点击确定、请等待 RKE 集群安装完成。',
                       prevStep: false,
                       btnText: '复制命令',
                       nextStep: 8,
@@ -793,13 +852,11 @@ export default class RKEClusterConfig extends PureComponent {
             <Col span={24} style={{ padding: '16px' }}>
               <Paragraph
                 className={styles.describe}
-                style={guideStep && guideStep === 3 && highlighted}
+                style={(guideStep && guideStep === 3 && highlighted) || {}}
               >
                 <ul>
                   <li>
-                    <span>
-                      采用 RKE 方案基于提供的主机安装 Kubernetes 集群。
-                    </span>
+                    <span>基于提供的主机安装集群。</span>
                   </li>
                   <li>
                     <span>
@@ -851,9 +908,10 @@ export default class RKEClusterConfig extends PureComponent {
                 <Form.Item
                   label="集群名称"
                   style={
-                    guideStep &&
-                    guideStep === 4 &&
-                    Object.assign({}, { padding: '0 16px' }, highlighted)
+                    (guideStep &&
+                      guideStep === 4 &&
+                      Object.assign({}, { padding: '0 16px' }, highlighted)) ||
+                    {}
                   }
                 >
                   {getFieldDecorator('name', {
@@ -900,9 +958,14 @@ export default class RKEClusterConfig extends PureComponent {
                     <Form.Item
                       label="节点列表"
                       style={
-                        guideStep &&
-                        guideStep === 5 &&
-                        Object.assign({}, { padding: '0 16px' }, highlighted)
+                        (guideStep &&
+                          guideStep === 5 &&
+                          Object.assign(
+                            {},
+                            { padding: '0 16px' },
+                            highlighted
+                          )) ||
+                        {}
                       }
                     >
                       {getFieldDecorator('nodeLists', {

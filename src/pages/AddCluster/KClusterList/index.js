@@ -226,7 +226,7 @@ export default class EnterpriseClusters extends PureComponent {
         title: '选择供应商'
       },
       {
-        title: '选择(创建)Kubernetes集群'
+        title: '选择(创建)平台集群'
       },
       {
         title: '初始化平台集群'
@@ -252,7 +252,12 @@ export default class EnterpriseClusters extends PureComponent {
     });
   };
   handleNewbieGuiding = info => {
-    const { prevStep, nextStep, handleClick = () => {} } = info;
+    const {
+      prevStep,
+      nextStep,
+      handleClick = () => {},
+      handleClosed = () => {}
+    } = info;
     return (
       <NewbieGuiding
         {...info}
@@ -263,6 +268,7 @@ export default class EnterpriseClusters extends PureComponent {
             clusterID: '',
             rainbond_init: false
           });
+          handleClosed();
         }}
         handlePrev={() => {
           if (prevStep) {
@@ -365,7 +371,7 @@ export default class EnterpriseClusters extends PureComponent {
     } = this.state;
     const nextDisable = selectClusterID === '';
 
-    let title = 'Kubernetes 集群列表';
+    let title = '集群列表';
     switch (provider) {
       case 'ack':
         title += '(阿里云 ACK)';
@@ -410,7 +416,7 @@ export default class EnterpriseClusters extends PureComponent {
     return (
       <PageHeaderLayout
         title="添加集群"
-        content="集群是资源的集合，以Kubernetes集群为基础，部署平台Region服务即可成为平台集群资源。"
+        content="集群是资源的集合，以集群为基础，部署平台Region服务即可成为平台集群资源。"
       >
         <Row style={{ marginBottom: '16px' }}>
           <Steps current={1}>

@@ -93,6 +93,7 @@ import {
   toCreatUser,
   toEditCloudBackup,
   toEditImageHub,
+  toEditMonitorin,
   toEditOauth,
   toQueryLinks,
   toQueryTopology,
@@ -272,8 +273,8 @@ export default {
         callback(data);
       }
     },
-    *getTeamAppList({ payload, callback }, { call }) {
-      const data = yield call(getTeamAppList, payload);
+    *getTeamAppList({ payload, callback, handleError }, { call }) {
+      const data = yield call(getTeamAppList, payload, handleError);
       if (data && callback) {
         callback(data);
       }
@@ -409,8 +410,8 @@ export default {
         callback(data);
       }
     },
-    *fetchRainbondInfo({ callback }, { call, put }) {
-      const data = yield call(getRainbondInfo);
+    *fetchRainbondInfo({ callback, handleError }, { call, put }) {
+      const data = yield call(getRainbondInfo, handleError);
       if (data) {
         cookie.set(
           'platform_url',
@@ -797,6 +798,12 @@ export default {
     },
     *editImageHub({ payload, callback }, { call }) {
       const response = yield call(toEditImageHub, payload);
+      if (callback) {
+        callback(response);
+      }
+    },
+    *editMonitorin({ payload, callback }, { call }) {
+      const response = yield call(toEditMonitorin, payload);
       if (callback) {
         callback(response);
       }

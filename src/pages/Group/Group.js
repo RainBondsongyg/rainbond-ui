@@ -2,14 +2,16 @@
 import EditGroupName from '@/components/AddOrEditGroup';
 import AppDirector from '@/components/AppDirector';
 import ApplicationGovernance from '@/components/ApplicationGovernance';
+import NewbieGuiding from '@/components/NewbieGuiding';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import {
-  Badge,
   Button,
   Col,
   Divider,
   Icon,
   Modal,
   notification,
+  Radio,
   Row,
   Spin,
   Tooltip
@@ -18,22 +20,23 @@ import { connect } from 'dva';
 import { routerRedux } from 'dva/router';
 import moment from 'moment';
 import React, { Fragment, PureComponent } from 'react';
+import AppState from '../../components/ApplicationState';
 import ConfirmModal from '../../components/ConfirmModal';
 import RapidCopy from '../../components/RapidCopy';
 import VisterBtn from '../../components/visitBtnForAlllink';
 import { batchOperation } from '../../services/app';
 import cookie from '../../utils/cookie';
 import globalUtil from '../../utils/global';
+import rainbondUtil from '../../utils/rainbond';
 import sourceUtil from '../../utils/source-unit';
 import AddServiceComponent from './AddServiceComponent';
-import AddThirdParty from './AddThirdParty';
+import AppJoinMode from './AppJoinMode';
 import AppShape from './AppShape';
 import ComponentList from './ComponentList';
 import EditorTopology from './EditorTopology';
 import styles from './Index.less';
-
 // eslint-disable-next-line react/no-multi-comp
-@connect(({ user, application, teamControl, enterprise, loading }) => ({
+@connect(({ user, application, teamControl, enterprise, loading, global }) => ({
   buildShapeLoading: loading.effects['global/buildShape'],
   editGroupLoading: loading.effects['application/editGroup'],
   deleteLoading: loading.effects['application/delete'],
@@ -42,7 +45,8 @@ import styles from './Index.less';
   groupDetail: application.groupDetail || {},
   currentTeam: teamControl.currentTeam,
   currentRegionName: teamControl.currentRegionName,
-  currentEnterprise: enterprise.currentEnterprise
+  currentEnterprise: enterprise.currentEnterprise,
+  novices: global.novices
 }))
 export default class Index extends PureComponent {
   constructor(arg) {
@@ -65,7 +69,14 @@ export default class Index extends PureComponent {
       customSwitch: false,
       resources: {},
       upgradableNum: 0,
-      upgradableNumLoading: true
+      upgradableNumLoading: true,
+      appStatusConfig: false,
+      guideStep: 1,
+      aggregation: false,
+      common: true,
+      compile: false,
+      flagHeight: false,
+      iframeHeight: '500px'
     };
   }
 
@@ -97,7 +108,29 @@ export default class Index extends PureComponent {
     this.loadTopology(true);
     this.fetchAppDetailState();
   };
-
+  handleNewbieGuiding = info => {
+    const { nextStep } = info;
+    return (
+      <NewbieGuiding
+        {...info}
+        totals={2}
+        handleClose={() => {
+          this.handleGuideStep('close');
+        }}
+        handleNext={() => {
+          if (nextStep) {
+            document.getElementById('scroll_div').scrollIntoView();
+            this.handleGuideStep(nextStep);
+          }
+        }}
+      />
+    );
+  };
+  handleGuideStep = guideStep => {
+    this.setState({
+      guideStep
+    });
+  };
   loadTopology(isCycle) {
     const { dispatch } = this.props;
     const teamName = globalUtil.getCurrTeamName();
@@ -211,6 +244,7 @@ export default class Index extends PureComponent {
       callback();
     }, times);
   };
+  // 获取总数据
 
   fetchAppDetail = () => {
     const { dispatch } = this.props;
@@ -273,7 +307,8 @@ export default class Index extends PureComponent {
       },
       callback: res => {
         this.setState({
-          resources: res.list
+          resources: res.list,
+          appStatusConfig: true
         });
       }
     });
@@ -326,7 +361,7 @@ export default class Index extends PureComponent {
           this.closeComponentTimer();
           this.cancelDelete(false);
           dispatch(
-            routerRedux.push(
+            routerRedux.replace(
               `/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/apps`
             )
           );
@@ -367,6 +402,7 @@ export default class Index extends PureComponent {
   toEdit = () => {
     this.setState({ toEdit: true });
   };
+
   cancelEdit = () => {
     this.setState({ toEdit: false });
   };
@@ -385,11 +421,23 @@ export default class Index extends PureComponent {
         group_id: this.getGroupId(),
         group_name: vals.group_name,
         note: vals.note,
-        username: vals.username
+        username: vals.username,
+        logo: vals.logo,
+        k8s_app: vals.k8s_app
       },
       callback: res => {
         if (res && res.status_code === 200) {
           notification.success({ message: '修改成功' });
+          dispatch({
+            type: 'application/editGroups',
+            payload: {
+              team_name: globalUtil.getCurrTeamName(),
+              group_id: this.getGroupId()
+            },
+            callback: res => {
+              notification.success({ message: '重启应用后生效' });
+            }
+          });
         }
         this.handleUpDataHeader();
         this.cancelEdit();
@@ -495,6 +543,19 @@ export default class Index extends PureComponent {
       )
     );
   };
+  heightOnchage = e => {
+    if (e) {
+      this.setState({
+        flagHeight: false,
+        iframeHeight: '500px'
+      });
+    } else {
+      this.setState({
+        flagHeight: true,
+        iframeHeight: '70vh'
+      });
+    }
+  };
   render() {
     const {
       groupDetail,
@@ -513,6 +574,7 @@ export default class Index extends PureComponent {
       buildShapeLoading,
       editGroupLoading,
       deleteLoading,
+      novices,
       appConfigGroupPermissions: { isAccess: isConfigGroup },
       componentPermissions,
       operationPermissions: { isAccess: isControl },
@@ -538,7 +600,14 @@ export default class Index extends PureComponent {
       customSwitch,
       serviceIds,
       upgradableNumLoading,
-      upgradableNum
+      upgradableNum,
+      appStatusConfig,
+      guideStep,
+      aggregation,
+      common,
+      compile,
+      flagHeight,
+      iframeHeight
     } = this.state;
     const codeObj = {
       start: '启动',
@@ -546,42 +615,22 @@ export default class Index extends PureComponent {
       stop: '停用',
       deploy: '构建'
     };
-
-    const appState = {
-      RUNNING: '运行中',
-      STARTING: '启动中',
-      CLOSED: '已关闭',
-      STOPPING: '关闭中',
-      ABNORMAL: '异常',
-      PARTIAL_ABNORMAL: '部分异常'
-    };
-    const appStateColor = {
-      RUNNING: 'success',
-      STARTING: 'success',
-      CLOSED: 'error',
-      STOPPING: 'error',
-      ABNORMAL: 'error',
-      PARTIAL_ABNORMAL: 'error'
-    };
     const BtnDisabled = !(jsonDataLength > 0);
     const MR = { marginRight: '10px' };
-
     const pageHeaderContent = (
       <div className={styles.pageHeaderContent}>
         <div className={styles.contentl}>
           <div className={styles.conBoxt}>
             <div className={styles.contentTitle}>
               <span>{currApp.group_name || '-'}</span>
-              {isEdit && (
-                <Icon
-                  style={{
-                    cursor: 'pointer',
-                    marginLeft: '5px'
-                  }}
-                  onClick={this.toEdit}
-                  type="edit"
-                />
-              )}
+              <Icon
+                style={{
+                  cursor: 'pointer',
+                  marginLeft: '5px'
+                }}
+                onClick={this.toEdit}
+                type="edit"
+              />
             </div>
             {resources.status && (
               <div className={styles.extraContent}>
@@ -621,11 +670,7 @@ export default class Index extends PureComponent {
             )}
           </div>
           <div className={styles.content_Box}>
-            <Badge
-              className={styles.states}
-              status={appStateColor[resources.status] || 'default'}
-              text={appState[resources.status] || '-'}
-            />
+            {appStatusConfig && <AppState AppStatus={resources.status} />}
             {resources.status && isStart && (
               <span>
                 <a
@@ -829,11 +874,163 @@ export default class Index extends PureComponent {
         </div>
       </div>
     );
+    const pageHeaderContents = (
+      <div className={styles.pageHeaderContents}>
+        <div className={styles.contentl}>
+          <div className={styles.conBoxt}>
+            <div className={styles.contentTitle}>
+              <span>{currApp.group_name || '-'}</span>
+              <Icon
+                style={{
+                  cursor: 'pointer',
+                  marginLeft: '5px'
+                }}
+                onClick={this.toEdit}
+                type="edit"
+              />
+            </div>
+            <div className={styles.content_Box}>
+              {appStatusConfig && <AppState AppStatus={resources.status} />}
+              {resources.status && isStart && (
+                <span>
+                  <a
+                    onClick={() => {
+                      this.handleTopology('start');
+                    }}
+                    disabled={BtnDisabled}
+                  >
+                    启动
+                  </a>
+                  <Divider type="vertical" />
+                </span>
+              )}
+              {resources.status &&
+                (resources.status === 'ABNORMAL' ||
+                  resources.status === 'PARTIAL_ABNORMAL') &&
+                serviceIds &&
+                serviceIds.length > 0 &&
+                isRestart && (
+                  <span>
+                    <a
+                      onClick={() => {
+                        this.handleTopology('restart');
+                      }}
+                      disabled={BtnDisabled}
+                    >
+                      重启
+                    </a>
+                    <Divider type="vertical" />
+                  </span>
+                )}
+              {isDelete && resources.status !== 'RUNNING' && (
+                <a onClick={this.toDelete}>删除</a>
+              )}
+              {resources.status && resources.status !== 'CLOSED' && isStop && (
+                <span>
+                  {resources.status !== 'RUNNING' && (
+                    <Divider type="vertical" />
+                  )}
+                  <a
+                    onClick={() => {
+                      this.handleTopology('stop');
+                    }}
+                  >
+                    停用
+                  </a>
+                </span>
+              )}
+            </div>
+            {resources.status && (
+              <div className={styles.extraContent}>
+                {resources.status !== 'CLOSED' && isUpdate && (
+                  <Button
+                    style={MR}
+                    onClick={() => {
+                      this.handleTopology('upgrade');
+                    }}
+                    disabled={BtnDisabled}
+                  >
+                    更新
+                  </Button>
+                )}
+                {isConstruct && isComponentConstruct && (
+                  <Button
+                    style={MR}
+                    disabled={BtnDisabled}
+                    onClick={() => {
+                      this.handleTopology('deploy');
+                    }}
+                  >
+                    构建
+                  </Button>
+                )}
+                {isCopy && (
+                  <Button
+                    style={MR}
+                    disabled={BtnDisabled}
+                    onClick={this.handleOpenRapidCopy}
+                  >
+                    快速复制
+                  </Button>
+                )}
+                {linkList.length > 0 && <VisterBtn linkList={linkList} />}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className={styles.contentr}>
+          <div className={styles.conrHeader}>
+            <div>
+              <span>创建时间</span>
+              <span>
+                {currApp.create_time
+                  ? moment(currApp.create_time)
+                      .locale('zh-cn')
+                      .format('YYYY-MM-DD HH:mm:ss')
+                  : '-'}
+              </span>
+            </div>
+            <div>
+              <span>更新时间</span>
+              <span>
+                {currApp.update_time
+                  ? moment(currApp.update_time)
+                      .locale('zh-cn')
+                      .format('YYYY-MM-DD HH:mm:ss')
+                  : '-'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
     const teamName = globalUtil.getCurrTeamName();
     const regionName = globalUtil.getCurrRegionName();
+    const highlighted = {
+      position: 'relative',
+      zIndex: 1000,
+      padding: '0 16px',
+      margin: '0 -16px',
+      background: '#fff'
+    };
+    const isScrollDiv = rainbondUtil.handleNewbie(novices, 'applicationInfo');
     return (
       <Fragment>
-        <Row>{pageHeaderContent}</Row>
+        <Row style={isScrollDiv && guideStep === 1 ? highlighted : {}}>
+          {flagHeight ? pageHeaderContents : pageHeaderContent}
+        </Row>
+        {guideStep === 1 &&
+          this.handleNewbieGuiding({
+            tit: '应用信息',
+            showSvg: false,
+            showArrow: true,
+            send: false,
+            configName: 'applicationInfo',
+            desc:
+              '应用由一个或多个服务组成，可以管理一个完整业务系统，比如：OA、CRM、ERP等，也可以管理一个完整的微服务架构的系统，这里展示了应用的基本信息。',
+            nextStep: 2,
+            conPosition: { top: '336px', left: '42%' }
+          })}
         {customSwitch && (
           <ApplicationGovernance
             mode={currApp && currApp.governance_mode}
@@ -842,130 +1039,282 @@ export default class Index extends PureComponent {
             onOk={this.fetchAppDetail}
           />
         )}
-        <Row
-          style={{
-            display: 'flex',
-            background: '#FFFFFF',
-            height: '60px',
-            alignItems: 'center',
-            borderBottom: '1px solid #e8e8e8'
-          }}
-        >
-          <Col span={16} style={{ paddingleft: '12px' }}>
-            <a
-              onClick={() => {
-                this.changeType('shape');
-              }}
-              style={{
-                marginLeft: '30px',
-                color: type !== 'list' ? '#1890ff' : 'rgba(0, 0, 0, 0.65)'
-              }}
-            >
-              拓扑图
-            </a>
-            {isComponentDescribe && (
-              <a
-                onClick={() => {
-                  this.changeType('list');
-                }}
-                style={{
-                  marginLeft: '30px',
-                  color: type === 'list' ? '#1890ff' : 'rgba(0, 0, 0, 0.65)'
-                }}
-              >
-                列表
-              </a>
-            )}
-          </Col>
-
-          <Col span={4} style={{ textAlign: 'right' }}>
-            {isComponentCreate && isComponentConstruct && (
-              <AddThirdParty
-                groupId={this.getGroupId()}
-                refreshCurrent={() => {
-                  this.loading();
-                }}
-                onload={() => {
-                  this.setState({ type: 'spin' }, () => {
-                    this.setState({
-                      type: this.state.size == 'large' ? 'shape' : 'list'
-                    });
-                  });
-                }}
-              />
-            )}
-          </Col>
-          <Col span={4} style={{ textAlign: 'center' }}>
-            {isComponentCreate && isComponentConstruct && (
-              <AddServiceComponent
-                groupId={this.getGroupId()}
-                refreshCurrent={() => {
-                  this.loading();
-                }}
-                onload={() => {
-                  this.setState({ type: 'spin' }, () => {
-                    this.setState({
-                      type: this.state.size == 'large' ? 'shape' : 'list'
-                    });
-                  });
-                }}
-              />
-            )}
-          </Col>
-        </Row>
-        {rapidCopy && (
-          <RapidCopy
-            on={this.handleCloseRapidCopy}
-            onCancel={this.handleCloseRapidCopy}
-            title="应用复制"
-          />
-        )}
-
-        {type !== 'list' && isComponentCreate && (
-          <Row
-            style={{
-              textAlign: 'right',
-              paddingTop: '16px',
-              paddingRight: '20px',
-              background: '#fff'
+        <Row className={styles.rowArrow} style={ guideStep === 2 ? highlighted : {} }>
+          <div
+            className={styles.iconBox}
+            onClick={() => {
+              this.heightOnchage(flagHeight);
             }}
           >
-            {type === 'shapes' ? (
+            {flagHeight ? (
+              <div className={styles.showOrhide}>
+                <DownOutlined />
+              </div>
+            ) : (
+              <div className={styles.showOrhide}>
+                <UpOutlined />
+              </div>
+            )}
+          </div>
+          <Row
+            style={{
+              display: 'flex',
+              background: '#FFFFFF',
+              height: '60px',
+              alignItems: 'center',
+              borderBottom: '1px solid #e8e8e8'
+            }}
+          >
+            <Col span={5} style={{ paddingleft: '12px' }}>
               <a
                 onClick={() => {
                   this.changeType('shape');
+                  this.setState({
+                    aggregation: false,
+                    common: true,
+                    compile: false
+                  });
+                }}
+                style={{
+                  marginLeft: '30px',
+                  color: type !== 'list' ? '#1890ff' : 'rgba(0, 0, 0, 0.65)'
                 }}
               >
-                切换到展示模式
+                拓扑图
               </a>
-            ) : (
-              <a
-                onClick={() => {
-                  this.changeType('shapes');
-                }}
-              >
-                切换到编辑模式
-              </a>
-            )}
-          </Row>
-        )}
+              {isComponentDescribe && (
+                <a
+                  onClick={() => {
+                    this.changeType('list');
+                  }}
+                  style={{
+                    marginLeft: '30px',
+                    color: type === 'list' ? '#1890ff' : 'rgba(0, 0, 0, 0.65)'
+                  }}
+                >
+                  列表
+                </a>
+              )}
+            </Col>
+            <Col
+              className={styles.topoBtn}
+              span={11}
+              style={{ paddingleft: '12px' }}
+            >
+              {type !== 'list' && isComponentCreate && (
+                <Radio.Group>
+                  {common ? (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#4C73B0',
+                      color:'#F6F7FA', borderColor: '#4C73B0'
+                    }}
+                      onClick={() => {
+                        this.changeType('shape');
+                        this.setState({
+                          aggregation: false,
+                          common: true,
+                          compile: false
+                        });
+                      }}
+                      disabled
+                    >
+                      普通模式
+                    </Radio.Button>
+                  ) : (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#fff',
+                      color:'#595959', borderColor: '#D9D9D9',
+                    }}
 
-        {type === 'list' && (
-          <ComponentList
-            componentPermissions={componentPermissions}
-            groupId={this.getGroupId()}
-          />
-        )}
-        {type === 'shape' && <AppShape group_id={this.getGroupId()} />}
-        {type === 'spin' && <Spin />}
-        {type === 'shapes' && (
-          <EditorTopology
-            changeType={types => {
-              this.changeType(types);
-            }}
-            group_id={this.getGroupId()}
-          />
-        )}
+                      onClick={() => {
+                        this.changeType('shape');
+                        this.setState({
+                          aggregation: false,
+                          common: true,
+                          compile: false
+                        });
+                      }}
+                    >
+                      普通模式
+                    </Radio.Button>
+                  )}
+                  {aggregation ? (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#4C73B0',
+                      color:'#F6F7FA', borderColor: '#4C73B0'
+                    }}
+                      onClick={() => {
+                        this.changeType('aggregation');
+                        this.setState({
+                          aggregation: true,
+                          common: false,
+                          compile: false
+                        });
+                      }}
+                      disabled
+                    >
+                      聚合模式
+                    </Radio.Button>
+                  ) : (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#fff',
+                      color:'#595959', borderColor: '#D9D9D9'
+                    }}
+                      onClick={() => {
+                        this.changeType('aggregation');
+                        this.setState({
+                          aggregation: true,
+                          common: false,
+                          compile: false
+                        });
+                      }}
+                    >
+                      聚合模式
+                    </Radio.Button>
+                  )}
+                  {compile ? (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#4C73B0',
+                      color:'#F6F7FA', borderColor: '#4C73B0'
+                    }}
+
+                      onClick={() => {
+                        this.changeType('shapes');
+                        this.setState({
+                          aggregation: false,
+                          common: false,
+                          compile: true
+                        });
+                      }}
+                      disabled
+                    >
+                      编排模式
+                    </Radio.Button>
+                  ) : (
+                    <Radio.Button
+                    style={{ 
+                      width:'70px', textAlign:'center', height:'32px', 
+                      lineHeight:'32px', fontSize:'13px',padding:'0px',background:'#fff',
+                      color:'#595959', borderColor: '#D9D9D9'
+                    }}
+                      onClick={() => {
+                        this.changeType('shapes');
+                        this.setState({
+                          aggregation: false,
+                          common: false,
+                          compile: true
+                        });
+                      }}
+                    >
+                      编排模式
+                    </Radio.Button>
+                  )}
+                </Radio.Group>
+              )}
+            </Col>
+            <Col span={4} style={{ textAlign: 'right' }}>
+              {/* {isComponentCreate && isComponentConstruct && (
+                <AddThirdParty
+                  groupId={this.getGroupId()}
+                  refreshCurrent={() => {
+                    this.loading();
+                  }}
+                  onload={() => {
+                    this.setState({ type: 'spin' }, () => {
+                      this.setState({
+                        type: this.state.size == 'large' ? 'shape' : 'list'
+                      });
+                    });
+                  }}
+                />
+              )} */}
+            </Col>
+            <Col span={4} style={{ textAlign: 'center' }}>
+              {isComponentCreate && isComponentConstruct && (
+                <AddServiceComponent
+                  groupId={this.getGroupId()}
+                  refreshCurrent={() => {
+                    this.loading();
+                  }}
+                  onload={() => {
+                    this.setState({ type: 'spin' }, () => {
+                      this.setState({
+                        type: this.state.size == 'large' ? 'shape' : 'list'
+                      });
+                    });
+                  }}
+                />
+              )}
+            </Col>
+          </Row>
+          {rapidCopy && (
+            <RapidCopy
+              copyFlag={true}
+              on={this.handleCloseRapidCopy}
+              onCancel={this.handleCloseRapidCopy}
+              title="应用复制"
+            />
+          )}
+
+          {type === 'list' && (
+            <ComponentList
+              componentPermissions={componentPermissions}
+              groupId={this.getGroupId()}
+            />
+          )}
+          {type === 'shape' && (
+            <AppShape
+              style={{ height: iframeHeight }}
+              group_id={this.getGroupId()}
+              flagHeight={flagHeight}
+              iframeHeight={iframeHeight}
+            />
+          )}
+          {type === 'aggregation' && (
+            <AppJoinMode
+              group_id={this.getGroupId()}
+              flagHeight={flagHeight}
+              iframeHeight={iframeHeight}
+            />
+          )}
+          {type === 'spin' && <Spin />}
+          {type === 'shapes' && (
+            <EditorTopology
+              changeType={types => {
+                this.changeType(types);
+              }}
+              key={iframeHeight}
+              iframeHeight={iframeHeight}
+              group_id={this.getGroupId()}
+              flagHeight={flagHeight}
+            />
+          )}
+        </Row>
+        {guideStep === 2 &&
+          this.handleNewbieGuiding({
+            tit: '应用拓扑图',
+            btnText: '已知晓',
+            showSvg: false,
+            showArrow: true,
+            send: true,
+            configName: 'applicationInfo',
+            desc:
+              '这是应用内部的服务拓扑图，通过拓扑图可以整体了解服务的运行状态和依赖关系，每个六边形就是一个服务，点击六边形可以进入服务的管理页面。',
+            nextStep: 3,
+            conPosition: { bottom: '-16px', left: '45%' }
+          })}
+        {isScrollDiv && <div id="scroll_div" style={{ marginTop: '180px' }} />}
+
         {toDelete && (
           <ConfirmModal
             title="删除应用"
@@ -980,11 +1329,14 @@ export default class Index extends PureComponent {
           <EditGroupName
             isAddGroup={false}
             group_name={groupDetail.group_name}
+            logo={groupDetail.logo}
             note={groupDetail.note}
             loading={editGroupLoading}
+            k8s_app={groupDetail.k8s_app}
             title="修改应用信息"
             onCancel={this.cancelEdit}
             onOk={this.handleEdit}
+            isEditEnglishName={currApp.can_edit}
           />
         )}
         {toEditAppDirector && (

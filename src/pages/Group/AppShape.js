@@ -5,11 +5,11 @@ import Topological from '../../components/Topological'
 
 export default class AppList extends PureComponent {
 	render(){
-		const {group_id} = this.props;
+		const {group_id,iframeHeight} = this.props;
 		return (
-			<Card  style={{minHeight: 400,padding:0}} bordered={false}>
-				<Topological group_id={group_id} />
-			</Card>
+			<div  style={{height: iframeHeight, background:'#fff'}} bordered={false}>
+				<Topological iframeHeight={iframeHeight} group_id={group_id} />
+			</div>
 			
 		)
 	}

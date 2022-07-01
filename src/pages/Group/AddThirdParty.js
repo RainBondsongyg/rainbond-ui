@@ -1,10 +1,11 @@
-import { Button, Drawer, Icon } from 'antd';
+import { Button, Drawer, Icon, Row, Col } from 'antd';
 import { connect } from 'dva';
 import React, { PureComponent } from 'react';
 import Check from '../Create/create-check';
 import Market from '../Create/market';
+import globalUtil from '../../utils/global';
 import OuterCustom from '../Create/outer-custom';
-
+import styles from './Index.less'
 @connect(({ user, application, global }) => ({
   currUser: user.currentUser,
   apps: application.apps,
@@ -18,6 +19,7 @@ export default class AddThirdParty extends PureComponent {
     this.state = {
       CustomButton: false,
       toAddService: false,
+      canceThirdParty:true,
       ServiceComponentOnePage: false,
       ServiceComponentTwoPage: 'outerCustom',
       ServiceComponentThreePage: null,
@@ -42,10 +44,11 @@ export default class AddThirdParty extends PureComponent {
 
   toAddService = () => {
     this.setState({ toAddService: true });
+    this.props.content(this.state.toAddService)
   };
 
   cancelAddService = () => {
-    this.setState({ toAddService: false }, () => {
+    this.setState({ toAddService: false,canceThirdParty: !this.state.canceThirdParty }, () => {
       this.setState({
         ServiceComponentTwoPage: 'outerCustom',
         ServiceComponentOnePage: false,
@@ -108,6 +111,8 @@ export default class AddThirdParty extends PureComponent {
       ServiceComponentThreePage,
       BackType
     } = this.state;
+    this.cancelAddService()
+    this.props.content(this.state.toAddService)
     if (ServiceComponentThreePage) {
       this.setState({
         ServiceComponentThreePage: null,
@@ -139,14 +144,11 @@ export default class AddThirdParty extends PureComponent {
         handleType: null,
         moreState: true
       },
-      () => {
-        this.props.refreshCurrent();
-      }
     );
   };
 
   render() {
-    const { rainbondInfo } = this.props;
+    const { rainbondInfo,flagThirdParty } = this.props;
     const {
       ButtonGroup,
       moreState,
@@ -155,8 +157,10 @@ export default class AddThirdParty extends PureComponent {
       ServiceComponentThreePage,
       ServiceGetData,
       ButtonGroupState,
-      handleType
+      handleType,
+      canceThirdParty,
     } = this.state;
+    const third_party = globalUtil.fetchSvg('third_party');
     const apiSvg = () => (
       <svg width="60px" height="60px" viewBox="0 0 41 27" version="1.1">
         <g
@@ -280,15 +284,27 @@ export default class AddThirdParty extends PureComponent {
     );
     return (
       <div>
-        <Button type="default" onClick={this.toAddService} style={{}}>
-          <Icon type="plus" />
-          添加第三方组件
-        </Button>
-        <Drawer
+        <div className={styles.ServiceBox}>
+          <Row>
+            <p className={styles.ServiceTitle}>从第三方组件开始</p>
+          </Row>
+          <Row style={{ marginBottom: '30px' }}>
+            <Col
+              span={8}
+              className={styles.ServiceDiv}
+              onClick={this.toAddService}
+            >
+              {third_party}
+              <p className={styles.ServiceSmallTitle}>第三方组件</p>
+            </Col>
+          </Row>
+        </div>
+       <Drawer
           title="添加第三方组件"
           placement="right"
           onClose={this.cancelAddService}
           visible={this.state.toAddService}
+          toAddThirdParty={this.state.toAddService}
           maskClosable={false}
           width={550}
         >
@@ -301,23 +317,14 @@ export default class AddThirdParty extends PureComponent {
                 this.refreshCurrent();
               }}
               ErrState={this.state.errState}
-              handleServiceBotton={(
-                ButtonGroup,
-                ButtonGroupState,
-                errState
-              ) => {
+              handleServiceBotton={( ButtonGroup,ButtonGroupState,errState) => {
                 this.handleServiceBotton(
                   ButtonGroup,
                   ButtonGroupState,
                   errState
                 );
               }}
-              handleServiceDataState={(
-                ServiceComponentOnePage,
-                ServiceComponentTwoPage,
-                ServiceComponentThreePage,
-                data
-              ) => {
+              handleServiceDataState={(ServiceComponentOnePage,ServiceComponentTwoPage,ServiceComponentThreePage,data) => {
                 this.handleServiceComponent(
                   ServiceComponentOnePage,
                   ServiceComponentTwoPage,
@@ -328,6 +335,7 @@ export default class AddThirdParty extends PureComponent {
                 this.props.onload && this.props.onload();
               }}
             />
+            
           )}
 
           {ServiceComponentTwoPage === 'market' && (
@@ -397,7 +405,7 @@ export default class AddThirdParty extends PureComponent {
               zIndex: 99999
             }}
           >
-            {!ServiceComponentTwoPage && ServiceComponentThreePage !== 'check' && (
+            { ServiceComponentTwoPage === 'outerCustom' &&
               <Button
                 style={{
                   marginRight: 8
@@ -408,7 +416,7 @@ export default class AddThirdParty extends PureComponent {
               >
                 上一步
               </Button>
-            )}
+            }
             {ButtonGroup && (
               <span style={{ marginRight: 8 }}>{ButtonGroup}</span>
             )}

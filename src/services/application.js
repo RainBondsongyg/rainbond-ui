@@ -288,7 +288,9 @@ export async function getGroupApps(
     region_name,
     group_id,
     page,
-    page_size
+    page_size,
+    sort,
+    order
   }
 ) {
   return request(
@@ -299,7 +301,9 @@ export async function getGroupApps(
         group_id: body.group_id,
         page: body.page || 1,
         page_size: body.page_size || 100,
-        query: body.query
+        query: body.query,
+        sort: body.sort,
+        order: body.order
       },
       showLoading: false
     }
@@ -355,8 +359,19 @@ export async function editGroup(body = {}) {
       data: {
         app_name: body.group_name,
         note: body.note,
-        username: body.username
+        username: body.username,
+        logo: body.logo,
+        k8s_app: body.k8s_app
       }
+    }
+  );
+}
+
+export async function editGroups(body = {}) {
+  return request(
+    `${apiconfig.baseUrl}/console/teams/${body.team_name}/groups/${body.group_id}/volumes`,
+    {
+      method: 'put',
     }
   );
 }
@@ -376,13 +391,16 @@ export async function addGroup(body = {}) {
         team_name: body.team_name,
         region_name: body.region_name,
         app_name: body.group_name,
-        note: body.note
+        note: body.note,
+        logo: body.logo,
+        k8s_app: body.k8s_app
       },
       showMessage: body.showMessage,
       noModels: body.noModels
     }
   );
 }
+
 
 export async function getServices(body = {}, handleError) {
   return request(
@@ -571,7 +589,8 @@ export async function submitShare(
       data: body.new_info,
       handleError,
       params: {
-        use_force: body.use_force
+        use_force: body.use_force,
+        is_plugin: body.new_info.app_version_info.is_plugin
       }
     }
   );
@@ -678,7 +697,13 @@ export async function completeShare(
 ) {
   return request(
     `${apiconfig.baseUrl}/console/teams/${body.team_name}/share/${body.share_id}/complete`,
-    { method: 'post', handleError }
+    { 
+      method: 'post',
+      params: {
+        is_plugin: body.is_plugin
+      },
+      handleError 
+    }
   );
 }
 
@@ -830,6 +855,22 @@ export async function delFailureBackup(
       data: {
         backup_id: body.backup_id
       }
+    }
+  );
+}
+// 检查治理模式
+export async function checkoutGovernanceModel(
+  body = { team_name, app_id, governance_mode },
+  handleError
+) {
+  return request(
+    `/console/teams/${body.team_name}/groups/${body.app_id}/governancemode/check`,
+    {
+      method: 'GET',
+      params: {
+        governance_mode: body.governance_mode
+      },
+      handleError
     }
   );
 }

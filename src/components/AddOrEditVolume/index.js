@@ -24,9 +24,9 @@ export default class AddVolumes extends PureComponent {
   componentDidMount = () => {
     const { data } = this.props;
     if (data && data.volume_type) {
-      this.setVolumeCapacityValidation(data.volume_type);
+      // this.setVolumeCapacityValidation(data.volume_type);
     } else {
-      this.setVolumeCapacityValidation('share-file');
+      // this.setVolumeCapacityValidation('share-file');
     }
   };
   // eslint-disable-next-line react/sort-comp

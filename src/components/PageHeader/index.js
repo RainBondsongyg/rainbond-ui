@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import globalUtil from '@/utils/global';
 import { Breadcrumb, Icon, Tabs } from 'antd';
 import classNames from 'classnames';

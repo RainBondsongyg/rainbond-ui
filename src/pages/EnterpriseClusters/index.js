@@ -23,7 +23,7 @@ import { Link, routerRedux } from 'dva/router';
 import React, { PureComponent } from 'react';
 import EditClusterInfo from '../../components/Cluster/EditClusterInfo';
 import ConfirmModal from '../../components/ConfirmModal';
-import ClusterIntroduced from '../../components/Introduced/ClusterIntroduced';
+import InstallStep from '../../components/Introduced/InstallStep';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import globalUtil from '../../utils/global';
 import rainbondUtil from '../../utils/rainbond';
@@ -52,7 +52,7 @@ export default class EnterpriseClusters extends PureComponent {
     this.state = {
       isNewbieGuide: rainbondUtil.isEnableNewbieGuide(enterprise),
       adminer,
-      clusters: [],
+      clusters: null,
       editClusterShow: false,
       regionInfo: false,
       text: '',
@@ -69,8 +69,7 @@ export default class EnterpriseClusters extends PureComponent {
         'successInstallClusters'
       ),
       setTenantLimitShow: false,
-      guideStep: 1,
-      isEnterpriseEdition: rainbondUtil.isEnterpriseEdition(rainbondInfo)
+      guideStep: 1
     };
   }
   componentWillMount() {
@@ -131,7 +130,7 @@ export default class EnterpriseClusters extends PureComponent {
     });
   };
 
-  loadClusters = name => {
+  loadClusters = () => {
     const {
       dispatch,
       match: {
@@ -141,8 +140,7 @@ export default class EnterpriseClusters extends PureComponent {
     dispatch({
       type: 'region/fetchEnterpriseClusters',
       payload: {
-        enterprise_id: eid,
-        name
+        enterprise_id: eid
       },
       callback: res => {
         if (res && res.list) {
@@ -154,6 +152,8 @@ export default class EnterpriseClusters extends PureComponent {
           });
           this.setState({ clusters });
           globalUtil.putClusterInfoLog(eid, res.list);
+        } else {
+          this.setState({ clusters: [] });
         }
       }
     });
@@ -218,6 +218,7 @@ export default class EnterpriseClusters extends PureComponent {
   };
 
   showRegions = item => {
+    console.log(item,'item')
     this.setState(
       {
         showTenantList: true,
@@ -391,6 +392,103 @@ export default class EnterpriseClusters extends PureComponent {
       }
     });
   };
+
+  // 开始应用安装回调
+  onStartInstall = type => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    this.handleClusterIntroduced();
+    // 从应用商店安装应用
+    if (type === '2') {
+      dispatch(routerRedux.push(`/enterprise/${eid}/shared/local?init=true`));
+    } else {
+      // 自定义安装
+      this.fetchMyTeams();
+    }
+  };
+
+  // 查看应用实例
+  onViewInstance = () => {
+    this.fetchMyTeams(true);
+  };
+
+  fetchMyTeams = (isNext = false) => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    const { clusters } = this.state;
+    dispatch({
+      type: 'global/fetchMyTeams',
+      payload: {
+        enterprise_id: eid,
+        page: 1,
+        page_size: 1
+      },
+      callback: res => {
+        if (res && res.status_code === 200) {
+          if (res && res.list.length > 0) {
+            const teamName = res.list[0].team_name;
+            if (isNext && teamName) {
+              this.fetchApps(teamName, true);
+            } else if (teamName && clusters) {
+              dispatch(
+                routerRedux.push(
+                  `/team/${teamName}/region/${clusters[0].region_name}/create/code`
+                )
+              );
+            }
+          } else {
+            return notification.warn({
+              message: '请先创建团队！'
+            });
+          }
+        }
+      }
+    });
+  };
+
+  fetchApps = (teamName = '', isNext = false) => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    const { clusters } = this.state;
+    dispatch({
+      type: 'global/fetchEnterpriseApps',
+      payload: {
+        enterprise_id: eid,
+        page: 1,
+        page_size: 1
+      },
+      callback: res => {
+        if (res && res.status_code === 200) {
+          if (res && res.list.length > 0) {
+            const groupId = res.list[0].ID;
+            if (isNext && groupId && teamName && clusters) {
+              dispatch(
+                routerRedux.push(
+                  `/team/${teamName}/region/${clusters[0].region_name}/apps/${groupId}`
+                )
+              );
+            }
+          } else {
+            return notification.warn({
+              message: '请先创建应用！'
+            });
+          }
+        }
+      }
+    });
+  };
   render() {
     const {
       delclusterLongin,
@@ -398,8 +496,7 @@ export default class EnterpriseClusters extends PureComponent {
         params: { eid }
       },
       clusterLoading,
-      form,
-      dispatch
+      form
     } = this.props;
     const {
       clusters,
@@ -431,7 +528,7 @@ export default class EnterpriseClusters extends PureComponent {
 
     const colorbj = (color, bg) => {
       return {
-        width: '100px',
+        // width: '100px',
         color,
         background: bg,
         borderRadius: '15px',
@@ -443,6 +540,7 @@ export default class EnterpriseClusters extends PureComponent {
         title: '名称',
         dataIndex: 'region_alias',
         align: 'center',
+        width: 120,
         render: (val, row) => {
           return (
             <Link to={`/enterprise/${eid}/clusters/${row.region_id}/dashboard`}>
@@ -452,48 +550,10 @@ export default class EnterpriseClusters extends PureComponent {
         }
       },
       {
-        title: '类型',
-        dataIndex: 'region_type',
-        align: 'center',
-        width: 100,
-        render: val => {
-          return (
-            <span>
-              {val && val instanceof Array && val.length > 0
-                ? val.map(item => {
-                    if (item === 'development') {
-                      return (
-                        <span style={{ marginRight: '8px' }} key={item}>
-                          开发集群
-                        </span>
-                      );
-                    }
-                    if (item === 'ack-manage') {
-                      return (
-                        <span style={{ marginRight: '8px' }} key={item}>
-                          阿里云-托管集群
-                        </span>
-                      );
-                    }
-                    if (item === 'custom') {
-                      return (
-                        <span style={{ marginRight: '8px' }} key={item}>
-                          普通集群
-                        </span>
-                      );
-                    }
-                    return item;
-                  })
-                : '普通集群'}
-            </span>
-          );
-        }
-      },
-      {
         title: '安装方式',
         dataIndex: 'provider',
         align: 'center',
-        width: 150,
+        width: 80,
         render: item => {
           switch (item) {
             case 'ack':
@@ -535,7 +595,7 @@ export default class EnterpriseClusters extends PureComponent {
         title: '内存(GB)',
         dataIndex: 'total_memory',
         align: 'center',
-        width: 200,
+        width: 80,
         render: (_, item) => {
           return (
             <a
@@ -553,13 +613,13 @@ export default class EnterpriseClusters extends PureComponent {
         title: '版本',
         dataIndex: 'rbd_version',
         align: 'center',
-        width: 350
+        width: 180
       },
       {
         title: '状态',
         dataIndex: 'status',
         align: 'center',
-        width: 150,
+        width: 60,
         render: (val, data) => {
           if (data.health_status === 'failure') {
             return <span style={{ color: 'red' }}>通信异常</span>;
@@ -615,7 +675,7 @@ export default class EnterpriseClusters extends PureComponent {
         title: '操作',
         dataIndex: 'method',
         align: 'center',
-        width: 240,
+        width: 150,
         render: (_, item) => {
           const mlist = [
             <a
@@ -638,7 +698,12 @@ export default class EnterpriseClusters extends PureComponent {
               }}
             >
               资源限额
-            </a>
+            </a>,
+            <Link
+              to={`/enterprise/${eid}/importMessage?region_id=${item.region_id}`}
+            >
+              导入
+            </Link> 
           ];
           if (item.provider === 'rke') {
             mlist.push(
@@ -731,19 +796,16 @@ export default class EnterpriseClusters extends PureComponent {
         clusters &&
         clusters.length &&
         clusters[0].status === '1' ? (
-          <ClusterIntroduced
-            onOk={() => {
-              this.handleClusterIntroduced();
-              dispatch(
-                routerRedux.push(`/enterprise/${eid}/shared/local?init=true`)
-              );
-            }}
+          <InstallStep
             onCancel={this.handleClusterIntroduced}
+            isCluster
+            eid={eid}
+            onStartInstall={this.onStartInstall}
+            onViewInstance={this.onViewInstance}
           />
         ) : (
           ''
         )}
-
         <Row style={{ marginBottom: '20px' }}>
           <Col span={24} style={{ textAlign: 'right' }}>
             <Link to={`/enterprise/${eid}/addCluster`}>
@@ -758,6 +820,10 @@ export default class EnterpriseClusters extends PureComponent {
               <Icon type="reload" />
             </Button>
             {guideStep === 1 &&
+              this.props.novices &&
+              rainbondUtil.handleNewbie(this.props.novices, 'addCluster') &&
+              clusters &&
+              clusters.length === 0 &&
               this.handleNewbieGuiding({
                 tit: '去添加集群',
                 desc: '支持添加多个计算集群，请按照向导进行第一个集群的添加',
@@ -795,7 +861,7 @@ export default class EnterpriseClusters extends PureComponent {
             message="注意！集群内存使用量是指当前集群的整体使用量，一般都大于租户内存使用量的总和"
           />
           <Table
-            scroll={{ x: window.innerWidth > 1500 ? false : 1500 }}
+            // scroll={{ x: window.innerWidth > 1500 ? false : 1500 }}
             loading={clusterLoading}
             dataSource={clusters}
             columns={columns}

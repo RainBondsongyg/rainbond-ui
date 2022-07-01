@@ -585,7 +585,7 @@ export default class Index extends PureComponent {
           ) {
             if (
               !Object.prototype.toString.call(overrides) ===
-                '[Object Object]' ||
+              '[Object Object]' ||
               overrides === undefined
             ) {
               overrides = {};
@@ -1138,7 +1138,7 @@ export default class Index extends PureComponent {
                   'https://gw.alipayobjects.com/zos/rmsportal/MjEImQtenlyueSmVEfUD.svg'
                 }
               />
-              <div style={{ width: '45%' }}>
+              <div style={{ width: '70%' }}>
                 <div className={styles.contentTitle} style={{ width: '100%' }}>
                   <span>{currApp.group_name || '-'}</span>
                   {isEdit && (
@@ -1152,7 +1152,7 @@ export default class Index extends PureComponent {
                     />
                   )}
                 </div>
-                <div className={styles.contentNote}>
+                <div title={appInfo.description || currApp.note} className={styles.contentNote}>
                   {appInfo.description || currApp.note}
                 </div>
               </div>
@@ -1188,13 +1188,13 @@ export default class Index extends PureComponent {
                   <div>
                     {resources.memory
                       ? `${sourceUtil.unit(resources.memory || 0, 'MB')}`
-                      : '未设置'}
+                      : '不限制'}
                   </div>
                 </div>
                 <div className={styles.connect_Boxs}>
                   <div>使用CPU</div>
                   <div>
-                    {resources.cpu ? `${resources.cpu / 1000}Core` : '未设置'}
+                    {resources.cpu ? `${resources.cpu / 1000}Core` : '不限制'}
                   </div>
                 </div>
                 <div className={styles.connect_Boxs}>
@@ -1217,8 +1217,8 @@ export default class Index extends PureComponent {
                 <span>
                   {currApp.create_time
                     ? moment(currApp.create_time)
-                        .locale('zh-cn')
-                        .format('YYYY-MM-DD HH:mm:ss')
+                      .locale('zh-cn')
+                      .format('YYYY-MM-DD HH:mm:ss')
                     : '-'}
                 </span>
               </div>
@@ -1227,8 +1227,8 @@ export default class Index extends PureComponent {
                 <span>
                   {currApp.update_time
                     ? moment(currApp.update_time)
-                        .locale('zh-cn')
-                        .format('YYYY-MM-DD HH:mm:ss')
+                      .locale('zh-cn')
+                      .format('YYYY-MM-DD HH:mm:ss')
                     : '-'}
                 </span>
               </div>

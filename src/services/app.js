@@ -1577,7 +1577,6 @@ export async function deleteVolume(
   );
 }
 export function getPerformanceAnalysis(body = {}) {
-  console.log(body);
   return request(
     `${apiconfig.baseUrl}/console/teams/${body.teamName}/apps/${body.app_alias}/monitor/query_range`,
     {
@@ -2062,7 +2061,8 @@ export async function editName(
     {
       method: 'put',
       data: {
-        service_cname: body.service_cname
+        service_cname: body.service_cname,
+        k8s_component_name: body.k8s_component_name
       }
     }
   );

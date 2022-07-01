@@ -87,14 +87,10 @@ class TeamLayout extends PureComponent {
   }
 
   componentWillMount() {
+    this.getNewbieGuideConfig();
     this.getEnterpriseList();
   }
-  componentWillReceiveProps(nextProps) {
-    // const {
-    //   match: {
-    //     params: { appID }
-    //   }
-    // } = nextProps;
+  componentWillReceiveProps() {
     const appID = globalUtil.getAppID();
     const { appID: cldAppID } = this.state;
     if (appID && appID !== cldAppID) {
@@ -109,6 +105,12 @@ class TeamLayout extends PureComponent {
       );
     }
   }
+  getNewbieGuideConfig = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'global/fetchNewbieGuideConfig'
+    });
+  };
   // get enterprise list
   getEnterpriseList = () => {
     const { dispatch, currentUser } = this.props;
@@ -188,7 +190,7 @@ class TeamLayout extends PureComponent {
           if (errtext && enterpriseList.length > 0) {
             notification.warning({ message: errtext });
             dispatch(
-              routerRedux.replace(
+              routerRedux.push(
                 `/enterprise/${enterpriseList[0].enterprise_id}/index`
               )
             );
@@ -386,10 +388,17 @@ class TeamLayout extends PureComponent {
           });
         }
       },
-      handleError: () => {
+      handleError: res => {
         this.setState({
           currentApp: false
         });
+        if (res && res.status === 404) {
+          this.props.dispatch(
+            routerRedux.push(
+              `/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/apps`
+            )
+          );
+        }
       }
     });
   };

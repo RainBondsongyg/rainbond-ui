@@ -71,6 +71,12 @@ export default [
             authority: ['admin', 'user']
           },
           {
+            path: '/enterprise/:eid/monitoring/:monitoringKey/dashboard',
+            component: './GrafanaDashboard',
+            name: 'GrafanaDashboard',
+            authority: ['admin', 'user']
+          },
+          {
             path: '/enterprise/:eid/clusters/:clusterID/dashboard',
             component: './EnterpriseClusterDashboard',
             name: 'EnterpriseClusterDashboard',
@@ -132,9 +138,57 @@ export default [
             authority: ['admin', 'user']
           },
           {
+            path: '/enterprise/:eid/importMessage',
+            component: './AddCluster/ImportMessage',
+            name: 'ImportMessage',
+            authority: ['admin', 'user']
+          },
+          {
             path: '/enterprise/:eid/provider/:provider/kclusters',
             component: './AddCluster/KClusterList',
             name: 'KClusterList',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/ACksterList',
+            component: './AddCluster/ACksterList',
+            name: 'ACksterList',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/Aliack',
+            component: './AddCluster/Aliack',
+            name: 'Aliack',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/ACksterList/advanced',
+            component: './AddCluster/Advanced',
+            name: 'ACkadvanced',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/ACksterList/install',
+            component: './AddCluster/Install',
+            name: 'ACkinstall',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/ACksterList/result',
+            component: './AddCluster/Result',
+            name: 'ACkresult',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/TencentList',
+            component: './AddCluster/TencentList',
+            name: 'TencentList',
+            authority: ['admin', 'user']
+          },
+          {
+            path: '/enterprise/:eid/provider/HuaweiList',
+            component: './AddCluster/HuaweiList',
+            name: 'HuaweiList',
             authority: ['admin', 'user']
           },
           {
@@ -346,6 +400,13 @@ export default [
             path: '/team/:teamName/region/:regionName/create-plugin',
             component: './Plugin/Create',
             name: 'plugin',
+            authority: ['admin', 'user']
+          },
+
+          {
+            path: '/team/:teamName/region/:regionName/install-plugin',
+            component: './Plugin/Install',
+            name: 'appPlugin',
             authority: ['admin', 'user']
           },
 

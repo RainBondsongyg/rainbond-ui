@@ -1,3 +1,7 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable react/no-unused-state */
+/* eslint-disable react/sort-comp */
 /* eslint-disable camelcase */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-nested-ternary */
@@ -32,7 +36,8 @@ import CreateAppModels from '../../components/CreateAppModels';
 import CreateHelmAppModels from '../../components/CreateHelmAppModels';
 import DeleteApp from '../../components/DeleteApp';
 import HelmAppMarket from '../../components/HelmAppMarket';
-import PlatformIntroduced from '../../components/Introduced/PlatformIntroduced';
+import InstallStep from '../../components/Introduced/InstallStep';
+// import PlatformIntroduced from '../../components/Introduced/PlatformIntroduced';
 import Lists from '../../components/Lists';
 import MarketAppDetailShow from '../../components/MarketAppDetailShow';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
@@ -125,15 +130,29 @@ export default class EnterpriseShared extends PureComponent {
       showApp: {},
       showMarketAppDetail: false,
       appTypes: false,
-      isClusters: false
+      isClusters: false,
+      isInStallShow: true,
+      showMarketCloudAuth: false,
+      isAuthorize: false,
+      installType: '1',
+      isStoreCluster: false,
+      clusters: []
     };
   }
   componentDidMount() {
-    const { user } = this.props;
+    const {
+      user,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    eid && this.handleLoadEnterpriseClusters(eid);
     if (user) {
       this.load();
+      this.hideInitShow();
     }
   }
+
   onChangeRadio = e => {
     this.setState(
       {
@@ -194,11 +213,13 @@ export default class EnterpriseShared extends PureComponent {
       this.handleOpencreateAppMarket();
       return null;
     }
+
     const { marketTab, helmTab } = this.state;
     let arr = [];
     arr = marketTab.filter(item => {
       return item.ID === Number(tabID);
     });
+
     let helms = [];
     helms = helmTab.filter(item => {
       return item.name === tabID;
@@ -206,6 +227,7 @@ export default class EnterpriseShared extends PureComponent {
 
     const isArr = arr && arr.length > 0;
     const isHelms = helms && helms.length > 0;
+
     const showCloudMarketAuth =
       // (isArr && arr[0].access_key === '' && arr[0].domain === 'rainbond') ||
       false;
@@ -422,6 +444,38 @@ export default class EnterpriseShared extends PureComponent {
       },
       helmPag
     );
+    this.loadHelmAppStore(payload, helmPag);
+  };
+  handleSyncHelmAppStore = name => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+
+    const { helmPag } = this.state;
+    const payload = Object.assign(
+      {},
+      {
+        name,
+        enterprise_id: eid
+      },
+      helmPag
+    );
+    dispatch({
+      type: 'market/syncHelmAppStore',
+      payload,
+      callback: res => {
+        res && this.loadHelmAppStore(payload, helmPag);
+      },
+      handleError: error => {
+        error && this.loadHelmAppStore(payload, helmPag);
+      }
+    });
+  };
+  loadHelmAppStore = (payload, helmPag) => {
+    const { dispatch } = this.props;
     dispatch({
       type: 'market/fetchHelmAppStore',
       payload,
@@ -461,7 +515,6 @@ export default class EnterpriseShared extends PureComponent {
       }
     });
   };
-
   checkStoreHub = () => {
     const {
       dispatch,
@@ -500,8 +553,13 @@ export default class EnterpriseShared extends PureComponent {
     this.getHelmMarketsTab(false, true);
     this.checkStoreHub();
   };
-  loadClusters = eid => {
-    const { dispatch } = this.props;
+  loadClusters = () => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
     dispatch({
       type: 'region/fetchEnterpriseClusters',
       payload: {
@@ -556,7 +614,7 @@ export default class EnterpriseShared extends PureComponent {
         helmPag: setMarketPag
       },
       () => {
-        this.getHelmAppStore(helmInfo && helmInfo.name);
+        this.handleSyncHelmAppStore(helmInfo && helmInfo.name);
       }
     );
   };
@@ -885,7 +943,13 @@ export default class EnterpriseShared extends PureComponent {
     const defaulAppImg = globalUtil.fetchSvg('defaulAppImg');
     const isLocalsContent = types !== 'marketContent';
     const isHelmContent = types === 'helmContent';
-    const { guideStep, initShow, activeTabKey, marketInfo } = this.state;
+    const {
+      guideStep,
+      initShow,
+      activeTabKey,
+      marketInfo,
+      isClusters
+    } = this.state;
     const helmInfo =
       isHelmContent && versions && versions.length > 0 && versions[0];
     const isReadInstall =
@@ -901,7 +965,7 @@ export default class EnterpriseShared extends PureComponent {
           indexs === 0 &&
           this.handleNewbieGuiding({
             tit: '安装应用',
-            send: false,
+            send: true,
             configName: 'installApp',
             desc:
               '从应用商店安装应用是最简单的应用部署方式，后面你也可以很方便的将您的企业应用发布到应用商店中',
@@ -1024,11 +1088,15 @@ export default class EnterpriseShared extends PureComponent {
                   style={{ background: '#fff' }}
                   onClick={e => {
                     e.stopPropagation();
-                    if (isReadInstall) {
+                    if (
+                      (isReadInstall && marketInfo && isClusters) ||
+                      types !== 'marketContent'
+                    ) {
                       this.installHelmApp(item, types);
                     } else {
                       this.setState({
-                        showCloudMarketAuth: true
+                        isInStallShow: true,
+                        guideStep: 'Jump'
                       });
                     }
                   }}
@@ -1076,6 +1144,8 @@ export default class EnterpriseShared extends PureComponent {
                 handleClick();
                 if (!isReadInstall) {
                   this.setState({
+                    // isInStallShow: true,
+                    // guideStep: 'Jump'
                     showCloudMarketAuth: true
                   });
                   return null;
@@ -1110,12 +1180,162 @@ export default class EnterpriseShared extends PureComponent {
       }
     });
   };
+  hideInstallStep = (isNext, installType) => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    const { isAuthorize, clusters } = this.state;
+    this.setState({ isInStallShow: false });
+    if (isNext) {
+      if ((isAuthorize && installType == 2) || installType == 1) {
+        if (isAuthorize && installType == 2) {
+          this.setState(({ marketInfo }) => {
+            return {
+              marketInfo: {
+                ...marketInfo,
+                access_actions: ['ReadInstall', 'OnlyRead']
+              }
+            };
+          });
+        } else {
+          this.fetchMyTeams();
+        }
+        this.setState({ installType });
+        sessionStorage.setItem('isAuthorize', isAuthorize);
+        // dispatch(routerRedux.push(`/enterprise/${eid}/clusters`));
+      } else {
+        this.setState({ showMarketCloudAuth: true });
+      }
+    } else {
+      this.setState({ isInStallShow: false });
+    }
+  };
+  handleOpenInstallApp = (
+    isReadInstall,
+    marketInfo,
+    isClusters,
+    types,
+    item
+  ) => {
+    const { isInStallShow, guideStep } = this.state;
+    if (
+      (isReadInstall && marketInfo && isClusters) ||
+      types !== 'marketContent'
+    ) {
+      this.installHelmApp(item, types);
+    } else {
+      this.setState({
+        isInStallShow: true,
+        guideStep: 'Jump'
+      });
+    }
+  };
+  fetchMyTeams = (isNext = false) => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    const { clusters } = this.state;
+    dispatch({
+      type: 'global/fetchMyTeams',
+      payload: {
+        enterprise_id: eid,
+        page: 1,
+        page_size: 1
+      },
+      callback: res => {
+        if (res && res.status_code === 200) {
+          if (res && res.list.length > 0) {
+            const teamName = res.list[0].team_name;
+            if (isNext && teamName) {
+              this.fetchApps(teamName, true);
+            } else if (teamName) {
+              dispatch(
+                routerRedux.push(
+                  `/team/${teamName}/region/${clusters[0].region_name}/create/code`
+                )
+              );
+            }
+          } else {
+            return notification.warn({
+              message: '请先创建团队！'
+            });
+          }
+        }
+      }
+    });
+  };
+  fetchApps = (teamName = '', isNext = false) => {
+    const {
+      dispatch,
+      match: {
+        params: { eid }
+      }
+    } = this.props;
+    const { clusters } = this.state;
+    dispatch({
+      type: 'global/fetchEnterpriseApps',
+      payload: {
+        enterprise_id: eid,
+        page: 1,
+        page_size: 1
+      },
+      callback: res => {
+        if (res && res.status_code === 200) {
+          if (res && res.list.length > 0) {
+            const groupId = res.list[0].ID;
+            if (isNext && groupId && teamName) {
+              dispatch(
+                routerRedux.push(
+                  `/team/${teamName}/region/${clusters[0].region_name}/apps/${groupId}`
+                )
+              );
+            }
+          } else {
+            return notification.warn({
+              message: '请先创建应用！'
+            });
+          }
+        }
+      }
+    });
+  };
+
+  onCloseLogin = () => {
+    this.setState({ isInStallShow: true, isAuthorize: true });
+  };
+  // 获取企业的集群信息
+  handleLoadEnterpriseClusters = eid => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'region/fetchEnterpriseClusters',
+      payload: {
+        enterprise_id: eid
+      },
+      callback: res => {
+        if (res && res.list) {
+          const clusters = [];
+          res.list.map((item, index) => {
+            item.key = `cluster${index}`;
+            clusters.push(item);
+            return item;
+          });
+          this.setState({ clusters });
+          globalUtil.putClusterInfoLog(eid, res.list);
+        }
+      }
+    });
+  };
   render() {
     const {
       match: {
         params: { eid }
       },
-      dispatch,
       upAppMarketLoading
     } = this.props;
 
@@ -1166,7 +1386,10 @@ export default class EnterpriseShared extends PureComponent {
       seeTag,
       guideStep,
       initShow,
-      isNewbieGuide
+      isNewbieGuide,
+      isInStallShow,
+      showMarketCloudAuth,
+      isAuthorize
     } = this.state;
     const tagLists = tagList && tagList.length > 0 && tagList;
     const accessActions =
@@ -1519,24 +1742,33 @@ export default class EnterpriseShared extends PureComponent {
         title="应用市场管理"
         content="应用市场支持Rainstore应用商店和Helm应用商店的对接和管理"
       >
-        {initShow && isNewbieGuide && (
+        {/* {initShow && isNewbieGuide && (
           <PlatformIntroduced onCancel={this.hideInitShow} />
+        )} */}
+
+        {guideStep === 'Jump' && isInStallShow && (
+          <InstallStep
+            onCancel={this.hideInstallStep}
+            isAuthorize={isAuthorize}
+            eid={eid}
+            installType={this.state.installType}
+            isStoreCluster={this.state.isStoreCluster}
+          />
         )}
 
-        {guideStep === 'Jump' &&
-          this.handleNewbieGuiding({
-            tit: '进行集群的安装',
-            desc: '当前暂无可用的计算资源，需要首先进行集群的安装',
-            send: true,
-            configName: 'installApp',
-            showSvg: false,
-            nextStep: 3,
-            btnText: '去安装',
-            conPosition: { right: 0, marginTop: '160px' },
-            handleClick: () => {
-              dispatch(routerRedux.push(`/enterprise/${eid}/clusters`));
-            }
-          })}
+        {showMarketCloudAuth && (
+          <AuthCompany
+            eid={eid}
+            marketName={marketInfo.name}
+            title="欢迎使用该平台，请先完成连接云应用商店授权"
+            onCancel={() => {
+              this.setState({ showMarketCloudAuth: false });
+            }}
+            currStep={2}
+            isReload
+            onCloseLogin={this.onCloseLogin}
+          />
+        )}
         {showMarketAppDetail && (
           <MarketAppDetailShow
             onOk={this.hideMarketAppDetail}
@@ -1665,6 +1897,7 @@ export default class EnterpriseShared extends PureComponent {
             onCheckedValues={this.onChangeBounced}
           />
         )}
+
         {showCloudMarketAuth && (
           <AuthCompany
             eid={eid}

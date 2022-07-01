@@ -111,3 +111,62 @@ export async function deleteEnterpriseCluster(params, handleError) {
     }
   );
 }
+/* 获取HelmToken */
+export async function fetchHelmToken({ eid }) {
+  return request(`${apiconfig.baseUrl}/console/enterprise/helmtoken`, {
+    method: 'get',
+    params: {
+      eid
+    }
+  });
+}
+/* 通过helm生成命令安装集群 */
+export async function fetchHelmCommand(param) {
+  return request(`${apiconfig.baseUrl}/console/proxy/enterprise-server/api/v1/helm/chart`, {
+    method: 'post',
+    data: {
+      eid: param.eid,
+      domain: param.domain,
+      token: param.token,
+      enableHA: param.data.enableHA,
+      database: param.data.database,
+      estorage: param.data.estorage,
+      etcd: param.data.etcd,
+      gatewayIngressIPs: param.data.gatewayIngressIPs,
+      imageHub: param.data.imageHub,
+      nodesForChaos: param.data.nodesForChaos,
+      nodesForGateway: param.data.nodesForGateway,
+      DockingType:param.data.type,
+      appui: false
+    }
+  });
+}
+/* 通过helm生成命令对接控制台查看状态 */
+export async function fetchHelmJoinStatus(param) {
+  return request(`${apiconfig.baseUrl}/console/enterprise/helmStatus`, {
+    method: 'get',
+    params: {
+      eid: param.eid,
+      token: param.token
+    }
+  });
+}
+/* 导入集群NameSpace */
+export async function fetchImportMessage(param) {
+  return request(`${apiconfig.baseUrl}/console/enterprise/${param.eid}/regions/${param.region_id}/namespace`, {
+    method: 'get',
+    params: {
+      content: 'unmanaged'
+    }
+  });
+}
+/* 获取NameSpace下的资源 */ 
+export async function fetchNameSpaceResource(param) {
+  return request(`${apiconfig.baseUrl}/console/enterprise/${param.eid}/regions/${param.region_id}/resource`, {
+    method: 'get',
+    params: {
+      content: 'unmanaged',
+      namespace: param.namespace
+    }
+  });
+}

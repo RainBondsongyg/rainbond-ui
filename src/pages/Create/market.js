@@ -16,7 +16,9 @@ import {
   Spin,
   Tabs,
   Tag,
-  Tooltip
+  Tooltip,
+  Row,
+  Col
 } from 'antd';
 import { connect } from 'dva';
 import { routerRedux } from 'dva/router';
@@ -28,7 +30,8 @@ import styles from '../../components/CreateTeam/index.less';
 import Ellipsis from '../../components/Ellipsis';
 import GoodrainRZ from '../../components/GoodrainRenzheng';
 import MarketAppDetailShow from '../../components/MarketAppDetailShow';
-import PageHeaderLayout from '../../layouts/PageHeaderLayout';
+import PageHeaderComponent from '../../layouts/PageHeaderComponent';
+import PageHeaderMarket from '../../layouts/PageHeaderMarket';
 import { fetchMarketAuthority } from '../../utils/authority';
 import { createEnterprise, createTeam } from '../../utils/breadcrumb';
 import globalUtil from '../../utils/global';
@@ -915,7 +918,8 @@ export default class Main extends PureComponent {
       currentEnterprise,
       currentTeam,
       currentRegionName,
-      isHelm = true
+      isHelm = true,
+      isAddMarket,
     } = this.props;
     const {
       handleType,
@@ -951,6 +955,7 @@ export default class Main extends PureComponent {
       rainStoreTab,
       helmStoreTab
     } = this.state;
+    const dockerSvg = globalUtil.fetchSvg('dockerSvg');
     const setHideOnSinglePage = !!moreState;
     const paginationProps = {
       current: moreState ? 1 : page,
@@ -1010,7 +1015,7 @@ export default class Main extends PureComponent {
           <a onClick={this.loadMore}>查看更多...</a>
         </div>
       );
-
+    //本地组件库
     const cardList = (
       <List
         bordered={false}
@@ -1040,7 +1045,7 @@ export default class Main extends PureComponent {
         )}
       />
     );
-
+    //开源应用商店
     const cloudCardList = (
       <List
         bordered={false}
@@ -1087,6 +1092,7 @@ export default class Main extends PureComponent {
     );
     const defaultValue =
       scopeMax == 'localApplication' ? appName : cloudAppName;
+    //搜索框
     const mainSearch = (
       <div
         style={{
@@ -1252,9 +1258,10 @@ export default class Main extends PureComponent {
           </Modal>
         )}
 
-        {marketTab && marketTab.length > 0 && (
+        {marketTab && marketTab.length > 0 && isAddMarket ?(
           <div>
-            <PageHeaderLayout
+            <PageHeaderComponent
+              isAddMarket={this.props.isAddMarket}
               isSvg
               breadcrumbList={breadcrumbList}
               content={handleType ? (!moreState ? mainSearch : '') : mainSearch}
@@ -1293,6 +1300,7 @@ export default class Main extends PureComponent {
                       '40px'
                   }}
                 >
+                  
                   {isSpinList ? SpinBox : this.handleTabs(tabList, cardList)}
                 </div>
               ) : (
@@ -1322,9 +1330,84 @@ export default class Main extends PureComponent {
                 </div>
               )}
               {mores}
-            </PageHeaderLayout>
+            </PageHeaderComponent>
           </div>
-        )}
+        ):(
+          <div>
+            <PageHeaderMarket
+              isAddMarket={this.props.isAddMarket}
+              isSvg
+              breadcrumbList={breadcrumbList}
+              content={handleType ? (!moreState ? mainSearch : '') : mainSearch}
+              tabList={marketTab}
+              tabActiveKey={scopeMax}
+              onTabChange={this.handleTabMaxChange}
+              isFooter={!!handleType}
+            >
+              {scopeMax !== 'localApplication' && !isInstall && (
+                <Alert
+                  message={
+                    <div>
+                      当前市场没有安装权限，
+                      <a
+                        onClick={() => {
+                          this.handleCertification(scopeMax);
+                        }}
+                      >
+                        去授权
+                      </a>
+                    </div>
+                  }
+                  type="success"
+                  style={{ margin: '-10px 0 15px 0' }}
+                />
+              )}
+              {scopeMax.indexOf('Helm-') > -1 && isHelm ? (
+                <div>{helmLoading ? SpinBox : helmCardList}</div>
+              ) : scopeMax === 'localApplication' ? (
+                <div
+                  style={{
+                    marginBottom:
+                      !moreState &&
+                      handleType &&
+                      handleType === 'Service' &&
+                      '40px'
+                  }}
+                >
+                  
+                  {isSpinList ? SpinBox : this.handleTabs(tabList, cardList)}
+                </div>
+              ) : (
+                <div>
+                  {isSpincloudList && isSpincloudList !== -1 ? (
+                    SpinBox
+                  ) : (
+                    <div>
+                      <div
+                        className={PluginStyles.cardList}
+                        style={{
+                          paddingBottom: '20px',
+                          marginBottom: !moreState ? '40px' : '0px'
+                        }}
+                      >
+                        {isSpincloudList !== -1 && cloudCardList}
+                        {networkText && (
+                          <Alert
+                            style={{ textAlign: 'center', marginBottom: 16 }}
+                            message={networkText}
+                            type="warning"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {mores}
+            </PageHeaderMarket>
+          </div>
+        )
+        }
       </div>
     );
   }

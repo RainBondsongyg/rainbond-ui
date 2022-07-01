@@ -56,7 +56,6 @@ export default class Index extends PureComponent {
             nameOne: true,
             nameTwo: false,
             nameThree: false,
-            appDetailInfo: null,
             //
             appDetail: {
                 event_websocket_url: "ws://47.104.161.96:6060/event_log",
@@ -141,12 +140,34 @@ export default class Index extends PureComponent {
         // this.loading();
         // this.handleWaitLevel();
     }
-
+    handleJump = target => {
+        const { dispatch, appID } = this.props;
+        dispatch(
+            routerRedux.push(
+                `/team/${globalUtil.getCurrTeamName()}/region/${globalUtil.getCurrRegionName()}/apps/${appID}/${target}`
+            )
+        );
+    };
     //切换
     changeType = type => {
-        this.setState({ type });
+        // this.setState({ type });
+        // dispatch({
+        //     type: 'appControl/fetchDetail',
+        //     payload: {
+        //         type,
+        //     },
+        //     callback: data => {
+        //         this.setState({ appDetail: data });
+        //     },
+        //     handleError: data => {
+        //         const code = httpResponseUtil.getCode(data);
+        //         if (code && code === 404) {
+        //             // 应用不存在
+        //             this.handleJump(`exception/404`);
+        //         }
+        //     }
+        // });
     };
-
 
 
     loadDetail = () => {
@@ -173,29 +194,23 @@ export default class Index extends PureComponent {
     };
 
     render() {
-        // const { groupDetail } = this.props;
-        // const btnList = [1, 2, 3]
         const {
             type,
             nameOne,
             nameTwo,
             nameThree,
             appDetail,
-            appDetailInfo,
             //伸缩
             flexData,
         } = this.state;
         const {
             ports,
         } = this.props;
-        // const appDetail = this.state.appDetail || {};
         if (!appDetail.service) {
             return null;
         }
         return (
             <Col
-                // className={styles.topoBtn}
-                // span={11}
                 style={{ paddingleft: '12px', width: "95%", display: "flex" }}
             >
                 <div className={styles.topTittle}>应用名称：{this.state.appName}</div>
@@ -326,7 +341,7 @@ export default class Index extends PureComponent {
                         <EnvironmentVariable
                             title="环境变量"
                             type="Inner"
-                            appAlias={this.state.appDetail.service.service_alias}
+                            appAlias={appDetail.service.service_alias}
                         />
                     </div>
                     {/* 伸缩 */}
@@ -343,7 +358,7 @@ export default class Index extends PureComponent {
                     <div className={styles.contantMoudel6}>
                         <KubernetesView />
                     </div>
-
+                    <div>创建</div>
                 </div>
             </Col >
 

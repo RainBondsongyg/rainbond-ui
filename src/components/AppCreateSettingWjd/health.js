@@ -103,6 +103,10 @@ class Index extends PureComponent {
     // 编辑确定
     handleEditHealth = vals => {
         const { startProbe } = this.props;
+        console.log("健康检测")
+        console.log(vals)
+        console.log(this.props);
+        return;
         this.setState({
             loading: true
         });

@@ -1,8 +1,8 @@
 import { Button, Card, Form, Select, Switch } from 'antd';
 import React, { PureComponent } from 'react';
 import DAinput from '../../components/DAinput';
-import DApvcinput from '../../components/DApvcinput.js';
-import DAselect from '../../components/DAseclect';
+// import DApvcinput from '../../components/DApvcinput.js';
+// import DAselect from '../../components/DAseclect';
 
 const FormItem = Form.Item;
 const { Option } = Select;
@@ -66,7 +66,7 @@ class Index extends PureComponent {
                         <FormItem label="Tolerations" {...formItemLayouts}>
                             {getFieldDecorator('Tolerations', {
                                 rules: [{ required: false, message: '请输入label' }]
-                            })(<DAselect />)}
+                            })(<DAinput />)}
                         </FormItem>
                         <FormItem label="secret" {...formItemLayout}>
                             {getFieldDecorator('secret', {
@@ -76,7 +76,7 @@ class Index extends PureComponent {
                         <FormItem label="pvc" {...formItemLayouts}>
                             {getFieldDecorator('Pvc', {
                                 rules: [{ required: false, message: '请输入Pvc' }]
-                            })(<DApvcinput />)}
+                            })(<DAinput />)}
                         </FormItem>
                         <FormItem
                             label="ServiceAccountName"

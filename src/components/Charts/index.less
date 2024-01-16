@@ -1,6 +1,14 @@
 .miniChart {
   position: relative;
   width: 100%;
+  .chartArea{
+    position: absolute;
+    bottom: -40px;
+    > div {
+      margin: 0 -5px;
+      overflow: hidden;
+    }
+  }
   .chartContent {
     position: absolute;
     bottom: -28px;

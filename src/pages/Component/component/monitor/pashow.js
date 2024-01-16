@@ -1,4 +1,6 @@
-import { ChartCard, Field, MiniArea, MiniBar } from "@/components/Charts";
+import { ChartCard, Field } from "@/components/Charts";
+import MiniArea from "@/components/Charts/MiniArea";
+import MiniBar from "@/components/Charts/MiniBar";
 import ScrollerX from "@/components/ScrollerX";
 import globalUtil from "@/utils/global";
 import monitorDataUtil from "@/utils/monitorDataUtil";
@@ -7,6 +9,7 @@ import teamUtil from "@/utils/team";
 import userUtil from "@/utils/user";
 import { Button, Card, Col, Icon, Row, Table, Tooltip } from "antd";
 import { connect } from "dva";
+import moment from "moment";
 import numeral from "numeral";
 import React, { Fragment, PureComponent } from "react";
 import { formatMessage, FormattedMessage  } from 'umi-plugin-locale';
@@ -219,17 +222,267 @@ export default class MonitorNow extends PureComponent {
         marginBottom: 24
       }
     };
+    const arr = [
+      [
+        1705309409.303,
+        "1"
+      ],
+      [
+        1705309469.303,
+        "1"
+      ],
+      [
+        1705309529.303,
+        "1"
+      ],
+      [
+        1705309589.303,
+        "1"
+      ],
+      [
+        1705309649.303,
+        "1"
+      ],
+      [
+        1705309709.303,
+        "1"
+      ],
+      [
+        1705309769.303,
+        "1"
+      ],
+      [
+        1705309829.303,
+        "1"
+      ],
+      [
+        1705309889.303,
+        "1"
+      ],
+      [
+        1705309949.303,
+        "1"
+      ],
+      [
+        1705310009.303,
+        "1"
+      ],
+      [
+        1705310069.303,
+        "1"
+      ],
+      [
+        1705310129.303,
+        "1"
+      ],
+      [
+        1705310189.303,
+        "1"
+      ],
+      [
+        1705310249.303,
+        "1"
+      ],
+      [
+        1705310309.303,
+        "1"
+      ],
+      [
+        1705310369.303,
+        "6"
+      ],
+      [
+        1705310429.303,
+        "1"
+      ],
+      [
+        1705310489.303,
+        "1"
+      ],
+      [
+        1705310549.303,
+        "7"
+      ],
+      [
+        1705310609.303,
+        "1"
+      ],
+      [
+        1705310669.303,
+        "1"
+      ],
+      [
+        1705310729.303,
+        "12"
+      ],
+      [
+        1705310789.303,
+        "1"
+      ],
+      [
+        1705310849.303,
+        "8"
+      ],
+      [
+        1705310909.303,
+        "1"
+      ],
+      [
+        1705310969.303,
+        "1"
+      ],
+      [
+        1705311029.303,
+        "1"
+      ],
+      [
+        1705311089.303,
+        "9"
+      ],
+      [
+        1705311149.303,
+        "1"
+      ],
+      [
+        1705311209.303,
+        "1"
+      ],
+      [
+        1705311269.303,
+        "1"
+      ],
+      [
+        1705311329.303,
+        "1"
+      ],
+      [
+        1705311389.303,
+        "1"
+      ],
+      [
+        1705311449.303,
+        "1"
+      ],
+      [
+        1705311509.303,
+        "1"
+      ],
+      [
+        1705311569.303,
+        "1"
+      ],
+      [
+        1705311629.303,
+        "1"
+      ],
+      [
+        1705311689.303,
+        "1"
+      ],
+      [
+        1705311749.303,
+        "1"
+      ],
+      [
+        1705311809.303,
+        "1"
+      ],
+      [
+        1705311869.303,
+        "1"
+      ],
+      [
+        1705311929.303,
+        "1"
+      ],
+      [
+        1705311989.303,
+        "1"
+      ],
+      [
+        1705312049.303,
+        "1"
+      ],
+      [
+        1705312109.303,
+        "1"
+      ],
+      [
+        1705312169.303,
+        "1"
+      ],
+      [
+        1705312229.303,
+        "1"
+      ],
+      [
+        1705312289.303,
+        "1"
+      ],
+      [
+        1705312349.303,
+        "1"
+      ],
+      [
+        1705312409.303,
+        "1"
+      ],
+      [
+        1705312469.303,
+        "1"
+      ],
+      [
+        1705312529.303,
+        "14"
+      ],
+      [
+        1705312589.303,
+        "1"
+      ],
+      [
+        1705312649.303,
+        "1"
+      ],
+      [
+        1705312709.303,
+        "1"
+      ],
+      [
+        1705312769.303,
+        "1"
+      ],
+      [
+        1705312829.303,
+        "1"
+      ],
+      [
+        1705312889.303,
+        "1"
+      ],
+      [
+        1705312949.303,
+        "1"
+      ],
+      [
+        1705313009.303,
+        "1"
+      ]
+    ]
+    let res = []
+    res = arr.map((item)=>({
+      x: moment(new Date(item[0] * 1000)).locale("zh-cn").format("HH:mm:ss"),
+      y: Number(item[1]),
+      y1: Number(item[1]),
+      y2: Number(item[1])
+    }))
     return (
       <Fragment>
         <Row gutter={24}>
           <Col {...topColResponsiveProps}>
             <ChartCard
-              // bordered={false}
-              // title="平均响应时间（ms）"
               title={<FormattedMessage id="componentOverview.body.tab.monitor.now.time"/>}
               action={
                 <Tooltip 
-                // title="平均响应时间，单位毫秒"
                 title={<FormattedMessage id="componentOverview.body.tab.monitor.now.averageTime"/>}
                 >
                   {" "}
@@ -242,11 +495,20 @@ export default class MonitorNow extends PureComponent {
               footer={<Field label="" value="" />}
               contentHeight={46}
             >
-              <MiniArea
+              {/* <MiniArea
                 color="#975FE4"
-                data={monitorDataUtil.queryRangeTog2(
-                  this.props.requestTimeRange
-                )}
+                // data={monitorDataUtil.queryRangeTog2(
+                //   this.props.requestTimeRange
+                // )}
+                data={res}
+              /> */}
+              <MiniArea 
+                keys='ms' 
+                chartColor='#975FE4' 
+                data={res}
+                // data={monitorDataUtil.queryRangeTog2(
+                //   this.props.requestTimeRange
+                // )}
               />
             </ChartCard>
           </Col>
@@ -270,11 +532,20 @@ export default class MonitorNow extends PureComponent {
               footer={<Field label="" value="" />}
               contentHeight={46}
             >
-              <MiniArea
+              {/* <MiniArea
                 color="#4593fc"
-                data={monitorDataUtil.queryRangeTog2(
-                  this.props.appRequestRange
-                )}
+                // data={monitorDataUtil.queryRangeTog2(
+                //   this.props.appRequestRange
+                // )}
+                data={res}
+              /> */}
+              <MiniArea 
+                keys='dps' 
+                chartColor='#4593fc' 
+                data={res}
+                // data={monitorDataUtil.queryRangeTog2(
+                //   this.props.requestTimeRange
+                // )}
               />
             </ChartCard>
           </Col>
@@ -298,10 +569,16 @@ export default class MonitorNow extends PureComponent {
               footer={<Field label="" value="" />}
               contentHeight={46}
             >
-              <MiniBar
-                data={monitorDataUtil.queryRangeTog2(
-                  this.props.onlineNumberRange
-                )}
+              {/* <MiniBar
+                // data={monitorDataUtil.queryRangeTog2(
+                //   this.props.onlineNumberRange
+                // )}
+                data={res}
+              /> */}
+              <MiniBar 
+                keys='num' 
+                chartColor='#4593fc' 
+                data={res} 
               />
             </ChartCard>
           </Col>

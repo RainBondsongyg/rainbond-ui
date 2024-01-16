@@ -13,6 +13,7 @@ import { connect } from 'dva';
 import moment from 'moment';
 import React, { Fragment, PureComponent } from 'react';
 import { formatMessage, FormattedMessage  } from 'umi-plugin-locale';
+import MonitorChart from '../MonitorChart/index';
 import styless from './index.less';
 
 @connect(({ application }) => ({ curAppDetail: application.groupDetail }))
@@ -266,6 +267,20 @@ export default class RangeChart extends PureComponent {
       });
     }
   };
+  // 格式化处理数据
+  formatData = res => {
+    // 创建一个新数组来存放提取的数据
+    const extractedData = [];
+    // 遍历原始数组
+    if(res.length > 0){
+      const cid = res.map(item => item.cid);
+      const value = res.map(item => item.value);
+      const time = res.map(item => item.time);
+      extractedData.push({ cid, value, time });
+      
+    }
+    return extractedData || []
+  };
 
   render() {
     const {
@@ -273,7 +288,8 @@ export default class RangeChart extends PureComponent {
       onDelete,
       onEdit,
       CustomMonitorInfo,
-      isEdit = true
+      isEdit = true,
+      type
     } = this.props;
     const { memoryRange, performanceObj, loading } = this.state;
     const isCustomMonitor = moduleName === 'CustomMonitor';
@@ -306,6 +322,8 @@ export default class RangeChart extends PureComponent {
         type: 'cat'
       }
     };
+    const chartValue = this.formatData(data)
+    
     return (
       <Fragment>
         <Spin spinning={loading}>
@@ -347,6 +365,14 @@ export default class RangeChart extends PureComponent {
               )
             }
           >
+            {/* {chartValue.length > 0 && 
+              <MonitorChart 
+                data={chartValue} 
+                keys={type}
+                swidth='100%'
+                sheight='400px'
+              />
+            } */}
             <Chart
               height={isCustomMonitor ? 222 : 400}
               data={data}

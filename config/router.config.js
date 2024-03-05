@@ -47,6 +47,12 @@ export default [
         authority: ['admin', 'user'],
       },
       {
+        path: '/enterprise/:eid/ServicePlugin',
+        component: '../layouts/ServicePlugin',
+        name: 'ServicePlugin',
+        authority: ['admin', 'user'],
+      },
+      {
         path: '/enterprise/:eid',
         component: '../layouts/EnterpriseLayout',
         name: 'EnterprisePage',

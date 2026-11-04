@@ -101,6 +101,7 @@ export default class index extends Component {
             dispatch={dispatch}
             formatMessage={formatMessage}
             baseInfo={{
+              enterprise_id: Global.getCurrEnterpriseId(),
               colorPrimary: Global.getPublicColor('primary-color'),
               currentLocale: cookie.get('language') === 'zh-CN' ? 'zh' : 'en',
               cluster_info: this.props.cluster_info,
